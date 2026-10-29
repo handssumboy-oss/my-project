@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('세 미션, 오답 재도전, 순서 변경, PNG, 최고기록, 다시 도전', async ({page}, testInfo) => {
  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
- await page.goto('/');
+ await page.goto('/classic.html');
  await expect(page.getByRole('heading',{level:1})).toContainText('구하기');
  await expect(page.getByRole('img',{name:'자봉이',exact:true})).toBeVisible();
  expect(await page.locator('.official-character').evaluate(img=>img.naturalWidth>0 && img.naturalHeight>0)).toBe(true);
@@ -58,7 +58,7 @@ test('세 미션, 오답 재도전, 순서 변경, PNG, 최고기록, 다시 도
  expect(errors).toEqual([]);
 });
 test('시간 초과 후에도 완료 가능, 화면 넘침 없음, 소리 설정 유지',async({page})=>{
- await page.clock.install(); await page.goto('/');
+ await page.clock.install(); await page.goto('/classic.html');
  await page.getByRole('button',{name:'사운드 켜기'}).click();
  await page.reload(); await expect(page.getByRole('button',{name:'사운드 끄기'})).toHaveAttribute('aria-pressed','true');
  await page.getByRole('button',{name:/시작하기/}).click(); await page.locator('[data-mission="0"]').click();
@@ -70,14 +70,14 @@ test('시간 초과 후에도 완료 가능, 화면 넘침 없음, 소리 설정
 });
 test('저장소 접근 불가 상태와 320px에서도 플레이 시작',async({page})=>{
  await page.addInitScript(()=>{Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}})});
- await page.setViewportSize({width:320,height:700}); await page.goto('/');
+ await page.setViewportSize({width:320,height:700}); await page.goto('/classic.html');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.getByRole('button',{name:/시작하기/}).click(); await page.locator('[data-mission="2"]').click();
  await expect(page.locator('.choices button')).toHaveCount(3);
 });
 test('공유 API가 없어도 주소를 직접 복사할 수 있음',async({page})=>{
  await page.addInitScript(()=>{Object.defineProperty(navigator,'share',{value:undefined});Object.defineProperty(navigator,'clipboard',{value:undefined})});
- await page.goto('/'); await page.getByRole('button',{name:/시작하기/}).click();
+ await page.goto('/classic.html'); await page.getByRole('button',{name:/시작하기/}).click();
  for(let stage=0;stage<3;stage++) {
   await page.locator(`[data-mission="${stage}"]`).click();
   if(stage===0) for(let i=0;i<6;i++) await page.locator(`[data-trash="${i}"]`).click();
