@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createRun,move,jump,update,RUN_SECONDS} from '../src/runner-engine.js';
+const item=(type,lane=1)=>({id:1,type,lane,z:.05,hit:false});
+test('레인 경계, 중복 점프, 착지 및 정지 상태',()=>{const r=createRun();move(r,-1);move(r,-1);assert.equal(r.lane,0);assert.equal(jump(r),true);assert.equal(jump(r),false);update(r,.44);assert.ok(r.jump>.9);update(r,.45);assert.equal(r.jumpElapsed,null);r.phase='paused';const t=r.time;update(r,1);assert.equal(r.time,t);assert.equal(move(r,1),false);});
+test('충돌, 무적 시간, 보호막과 하트 소진',()=>{const r=createRun();r.objects=[item('cone')];update(r,.01);assert.equal(r.hearts,2);r.objects=[item('cone')];update(r,.01);assert.equal(r.hearts,2);r.invincible=0;r.shield=10;r.objects=[item('cone')];update(r,.01);assert.equal(r.hearts,2);assert.equal(r.shield,0);r.invincible=0;r.hearts=1;r.objects=[item('barrier')];update(r,.01);assert.equal(r.phase,'over');});
+test('충분한 높이에서 점프하면 장애물을 넘고 보너스 획득',()=>{const r=createRun();jump(r);update(r,.4);r.objects=[item('cone')];update(r,.01);assert.equal(r.hearts,3);assert.equal(r.score,5);});
+test('연속 수집, 콤보 배수와 자석은 옆 레인 수집',()=>{const r=createRun();for(let i=0;i<8;i++){r.objects=[item('orb')];update(r,.01);}assert.equal(r.score,90);assert.equal(r.maxCombo,8);r.magnet=3;r.objects=[item('litter',0)];update(r,.01);assert.equal(r.collected,9);assert.equal(r.score,110);});
+test('아이템 획득과 2분 완주, 완료 후 점수 유지',()=>{const r=createRun(()=>.1);r.objects=[item('shield'),item('magnet')];update(r,.01);assert.equal(r.shield,10);assert.equal(r.magnet,9);for(let i=0;i<RUN_SECONDS*60;i++)update(r,1/60);assert.equal(r.phase,'clear');assert.equal(r.stage,2);assert.ok(r.distance>1000);const score=r.score;update(r,1);assert.equal(r.score,score);});
+test('매 장애물 줄에 이동 가능한 안전 레인이 존재함',()=>{for(const random of [()=>.05,()=>.45,()=>.95]){const r=createRun(random);r.time=10;update(r,.01);const obstacles=r.objects.filter(o=>o.type==='cone'||o.type==='barrier');assert.equal(obstacles.length,1);const coins=r.objects.filter(o=>o.type==='orb'||o.type==='litter');assert.ok(coins.every(o=>o.lane!==obstacles[0].lane));}});
