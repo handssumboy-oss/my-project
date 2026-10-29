@@ -4,8 +4,8 @@
 @media(max-width:360px){.hero h1{font-size:43px}}
 .town-art.clean{filter:saturate(1.12) brightness(1.04);animation:appear .6s ease-out}
 
-/* Display uploaded artwork intact, including its original white background. */
-.official-character{height:auto;max-height:none;border-radius:18px;background:#fff;box-shadow:0 5px 18px #426c5515}
+/* Preserve PNG alpha: the character must not receive a rectangular backdrop. */
+.official-character{height:auto;max-height:none;border-radius:0;background:transparent;box-shadow:none}
 .mascot:has(.official-character){width:164px}
 .result-character:has(.official-character){width:132px}
-@media(max-width:640px){.mascot:has(.official-character){width:116px}.result-character:has(.official-character){width:106px;bottom:0;right:20px}.hero-character:has(.official-character){bottom:8px}.official-character{border-radius:14px}}
+@media(max-width:640px){.mascot:has(.official-character){width:116px}.result-character:has(.official-character){width:106px;bottom:0;right:20px}.hero-character:has(.official-character){bottom:8px}.official-character{border-radius:0}}

@@ -22,7 +22,7 @@
 
 `src/runner.js`: 러너 UI·입력·오디오·결과·공유. `src/runner-engine.js`: 독립된 물리·레인·충돌·점수·아이템 규칙. `src/runner-renderer.js`: Canvas 2D를 이용한 원근감 있는 2.5D 도로, 입체 건물·장애물, 레트로 일몰과 배경 이동. 실제 3D 모델/WebGL 엔진은 사용하지 않으며, 자봉이는 제공된 3D 렌더링 이미지입니다. `src/runner.css`와 `src/style-base-runner.css`: 반응형 게임 UI.
 
-`assets/characters/jabongi-runner.png`는 제공된 점프 포즈 `jabongi-10.png`에서 배경 제거만 요청해 Image Gen으로 만든 파생 파일입니다. 원본 PNG 12개는 편집·삭제하지 않았습니다. 원본 디자인과 비율을 유지하도록 요청했으며, 게시 전 권리자 관점의 최종 확인이 가능합니다.
+`assets/characters/jabongi-runner.png`는 최초 배경 제거 파생 파일이며, 현재 사용하는 `jabongi-clean.png`는 외곽 잔여물을 추가 정리한 투명 RGBA 파일입니다. 두 파일 모두 제공된 점프 포즈 `jabongi-10.png`에서 배경 제거만 요청해 Image Gen으로 만든 파생 파일입니다. 원본 PNG 12개는 편집·삭제하지 않았습니다. 원본 디자인과 비율을 유지하도록 요청했으며, 게시 전 권리자 관점의 최종 확인이 가능합니다.
 
 `tests/runner-engine.test.js`는 이동 경계·점프·충돌·무적·보호막·자석·콤보·안전 경로·2분 완주를 검증합니다. `tests/runner.spec.js`는 모바일·PC에서 실제 조작·일시정지·게임오버·재도전·PNG·320px 화면·저장소 차단을 검증합니다. 기존 미션 테스트도 함께 실행합니다.
 
@@ -76,7 +76,7 @@ assets/favicon.svg         아이콘
 
 ## 공식 이미지와 내용 수정
 
-업로드된 원본 12개는 `assets/characters/jabongi-01.png`~`jabongi-12.png`로 편집 없이 보관합니다. `sources.json`에서 GitHub 원본 파일명과의 대응을 확인할 수 있습니다. 현재 선택은 흰 배경의 점프 포즈 `jabongi-10.png`입니다. 체크무늬나 흰 배경도 원본의 일부로 보존하며, 캐릭터 디자인·비율을 변경하거나 배경을 제거하지 않았습니다.
+업로드된 원본 12개는 `assets/characters/jabongi-01.png`~`jabongi-12.png`로 편집 없이 보관합니다. `sources.json`에서 GitHub 원본 파일명과의 대응을 확인할 수 있습니다. 업로드된 원본은 RGB여서 투명도 채널이 없으며, 일부 체크무늬도 원본 픽셀에 포함되어 있습니다. 현재 두 게임 모드는 배경과 외곽 잔여물을 정리한 RGBA 파생 파일 `jabongi-clean.png`를 사용합니다. 캐릭터 이미지에는 흰 배경이나 사각형 그림자를 적용하지 않습니다. 원본 12개는 편집 없이 보관합니다.
 
 다른 공식 파일을 `assets/characters/`에 넣고 `src/config.js`의 `CHARACTER_PATH`를 파일명으로 지정합니다. 원본 비율을 유지해 시작·결과 화면과 결과 PNG에 표시하며 원본을 변형하지 않습니다. 경로가 잘못되면 임시 도형을 유지합니다. Windows PC의 폴더 경로는 웹/클라우드에서 직접 접근할 수 없으므로 파일 자체를 저장소에 추가해야 합니다.
 
