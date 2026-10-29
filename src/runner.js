@@ -1,6 +1,6 @@
 import {createRun,update,move,jump,RUN_SECONDS,STAGES} from './runner-engine.js';
 import {drawScene} from './runner-renderer.js';
-const spriteURL=new URL('../assets/characters/jabongi-runner.png',import.meta.url).href;
+const spriteURL=new URL('../assets/characters/jabongi-clean.png',import.meta.url).href;
 const app=document.querySelector('#app');
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const save=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{/* Playing never requires storage. */}};

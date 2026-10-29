@@ -1,5 +1,5 @@
 // 공식 파일을 assets/characters/에 넣은 후 경로를 지정하세요. null이면 임시 도형입니다.
-export const CHARACTER_PATH = 'jabongi-10.png'; // 업로드 원본: 점프하는 자봉이
+export const CHARACTER_PATH = 'jabongi-clean.png'; // 원본을 보관하고 알파를 정리한 투명 파생 파일 사용
 export const MISSIONS = [
  { title: '공원을 깨끗하게!', sub: '작은 손길로 되찾는 초록빛 공원', icon: '♧', target: 35, place: '초록 공원', color: 'green' },
  { title: '나눔 상자를 채워라!', sub: '나누면 두 배가 되는 따뜻한 마음', icon: '▣', target: 40, place: '나눔센터', color: 'peach' },
