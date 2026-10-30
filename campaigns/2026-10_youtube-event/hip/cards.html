@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>행복합니다 이벤트 카드뉴스 (힙 버전)</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>
+  :root{
+    --paper:#F4EFE6; --ink:#121212; --blue:#2F56F5; --lime:#D7FF3B; --pink:#FF7AB6; --grey:#8A8579; --line:#121212;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#ddd;font-family:'Noto Sans KR',sans-serif;color:var(--ink)}
+  .card{width:1080px;height:1350px;background:var(--paper);position:relative;overflow:hidden;margin:0 auto 40px}
+  .noise{position:absolute;inset:0;background-image:radial-gradient(rgba(0,0,0,.06) 1px,transparent 1px);background-size:6px 6px;pointer-events:none}
+  .top{position:absolute;top:56px;left:64px;right:64px;display:flex;justify-content:space-between;align-items:center}
+  .top img{mix-blend-mode:multiply}
+  .ivy{height:74px}.kvc{height:46px}
+  .tag{font-family:'Space Mono',monospace;font-weight:700;font-size:22px;letter-spacing:.06em;border:3px solid var(--ink);border-radius:999px;padding:8px 22px;background:#fff;display:inline-block}
+  .sticker{position:absolute;font-family:'Black Han Sans';background:var(--lime);border:4px solid var(--ink);border-radius:999px;padding:14px 30px;font-size:36px;box-shadow:6px 6px 0 var(--ink)}
+  .hand{font-family:'Nanum Pen Script';}
+  /* 1. player */
+  .player{position:absolute;left:110px;right:110px;top:300px;background:#fff;border:4px solid var(--ink);border-radius:36px;box-shadow:14px 14px 0 var(--ink);padding:34px 34px 30px}
+  .art{width:100%;height:520px;border-radius:22px;overflow:hidden;border:3px solid var(--ink);position:relative}
+  .art img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+  .np{position:absolute;left:18px;top:18px;font-family:'Space Mono';font-weight:700;font-size:20px;background:var(--ink);color:var(--lime);padding:6px 14px;border-radius:8px}
+  .meta{display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px}
+  .meta h2{font-family:'Black Han Sans';font-size:58px;line-height:1;font-weight:400}
+  .meta p{font-family:'Space Mono';font-weight:700;font-size:24px;margin-top:10px;color:var(--grey)}
+  .heart{width:62px;height:62px;border-radius:50%;background:var(--pink);border:3px solid var(--ink);display:grid;place-items:center;font-family:'Black Han Sans';font-size:34px;color:#fff}
+  .bar{height:12px;background:#E7E2D8;border-radius:99px;margin-top:26px;position:relative;border:2px solid var(--ink)}
+  .bar i{position:absolute;left:0;top:0;bottom:0;width:62%;background:var(--blue);border-radius:99px}
+  .bar b{position:absolute;left:62%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:#fff;border:3px solid var(--ink)}
+  .time{display:flex;justify-content:space-between;font-family:'Space Mono';font-size:20px;margin-top:10px;color:var(--grey)}
+  .ctrl{display:flex;justify-content:center;gap:56px;align-items:center;margin-top:10px}
+  .ctrl span{font-family:'Space Mono';font-weight:700;font-size:34px}
+  .ctrl .play{width:84px;height:84px;border-radius:50%;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-size:30px}
+  .h1{position:absolute;left:64px;right:64px;top:170px;font-family:'Black Han Sans';font-size:92px;line-height:1.02;letter-spacing:-.02em}
+  .h1 em{font-style:normal;background:var(--lime);padding:0 10px;border-radius:10px}
+  .foot{position:absolute;left:64px;right:64px;bottom:60px;display:flex;justify-content:space-between;align-items:flex-end}
+  .foot .k{font-weight:700;font-size:28px;line-height:1.5;white-space:nowrap}
+  .foot .k small{display:block;font-weight:500;font-size:22px;color:var(--grey)}
+  /* 2. playlist */
+  .list{position:absolute;left:64px;right:64px;top:330px}
+  .track{display:flex;gap:28px;align-items:center;background:#fff;border:4px solid var(--ink);border-radius:28px;padding:28px 30px;margin-bottom:26px;box-shadow:8px 8px 0 var(--ink)}
+  .track .no{font-family:'Space Mono';font-weight:700;font-size:30px;width:74px;height:74px;border-radius:18px;background:var(--ink);color:var(--paper);display:grid;place-items:center;flex:none}
+  .track h3{font-family:'Black Han Sans';font-weight:400;font-size:44px;line-height:1.15}
+  .track p{font-size:25px;line-height:1.45;margin-top:6px;color:#3a3a3a}
+  .track .qr{width:150px;height:150px;flex:none;border:3px solid var(--ink);border-radius:14px;overflow:hidden;background:#fff;margin-left:auto}
+  .track .qr img{width:100%;height:100%}
+  .track.hot{background:var(--blue);color:#fff}
+  .track.hot p{color:#E8ECFF}
+  .track.hot .no{background:var(--lime);color:var(--ink)}
+  .warn{display:inline-block;margin-top:10px;background:var(--lime);color:var(--ink);font-weight:900;font-size:24px;padding:6px 14px;border-radius:8px;border:2px solid var(--ink)}
+  /* 3. receipt */
+  .receipt{position:absolute;left:200px;right:200px;top:250px;background:#fff;padding:54px 54px 70px;font-family:'Space Mono','Noto Sans KR';box-shadow:0 18px 0 -6px rgba(0,0,0,.08);transform:rotate(-2deg)}
+  .receipt:after{content:"";position:absolute;left:0;right:0;bottom:-22px;height:24px;background:linear-gradient(-45deg,transparent 16px,#fff 0) 0 0/32px 24px,linear-gradient(45deg,transparent 16px,#fff 0) 0 0/32px 24px}
+  .receipt h2{font-family:'Black Han Sans';font-weight:400;font-size:56px;text-align:center}
+  .receipt .sub{text-align:center;font-size:20px;color:var(--grey);margin-top:8px}
+  .dash{border-top:3px dashed var(--ink);margin:26px 0}
+  .row{display:flex;justify-content:space-between;font-size:25px;line-height:1.9;font-family:'Noto Sans KR';font-weight:500}
+  .row span:last-child{font-family:'Space Mono';font-weight:700}
+  .total{display:flex;justify-content:space-between;align-items:center;font-family:'Black Han Sans';font-size:44px}
+  .total span:last-child{background:var(--lime);padding:2px 14px;border-radius:8px}
+  .barcode{height:70px;margin-top:28px;background:repeating-linear-gradient(90deg,var(--ink) 0 3px,transparent 3px 6px,var(--ink) 6px 10px,transparent 10px 12px,var(--ink) 12px 13px,transparent 13px 17px)}
+  .receipt .thx{text-align:center;font-size:20px;margin-top:12px;letter-spacing:.2em}
+  /* 4. d-3 */
+  .dday{position:absolute;left:40px;top:150px;font-family:'Black Han Sans';font-size:420px;line-height:.9;color:var(--blue);letter-spacing:-.04em}
+  .noti{position:absolute;left:84px;right:84px;background:rgba(255,255,255,.96);border:4px solid var(--ink);border-radius:30px;padding:26px 30px;display:flex;gap:22px;align-items:center;box-shadow:10px 10px 0 var(--ink)}
+  .noti .ic{width:72px;height:72px;border-radius:18px;background:#FF0033;flex:none;display:grid;place-items:center}
+  .noti .ic:after{content:"";border-left:24px solid #fff;border-top:15px solid transparent;border-bottom:15px solid transparent;margin-left:6px}
+  .noti .ic.form{background:#6A3DE8}
+  .noti .ic.form:after{border:none;width:30px;height:36px;background:#fff;border-radius:4px;margin:0}
+  .noti b{display:block;font-size:22px;color:var(--grey);font-weight:500;font-family:'Space Mono'}
+  .noti p{font-size:32px;font-weight:700;line-height:1.35}
+  .noti .now{margin-left:auto;font-family:'Space Mono';font-size:20px;color:var(--grey);align-self:flex-start}
+</style>
+</head>
+<body>
+
+<!-- 1. COVER : 뮤직 플레이어 -->
+<section class="card" id="c1">
+  <div class="noise"></div>
+  <div class="top"><img class="ivy" src="assets/logo_ivy_t.png" alt=""><span class="tag">M/V 댓글 EVENT</span><img class="kvc" src="assets/logo_kvc_t.png" alt=""></div>
+  <div class="h1" style="top:150px;font-size:84px">지금 내 행복,<br><em>몇 번 트랙?</em></div>
+  <div class="player" style="top:350px">
+    <div class="art"><img src="assets/mv_photo.jpg" alt=""><span class="np">▶ NOW PLAYING</span></div>
+    <div class="meta"><div><h2>행복합니다</h2><p>H1-KEY · Performance ver.</p></div><div class="heart">♥</div></div>
+    <div class="bar"><i></i><b></b></div>
+    <div class="time"><span>2014</span><span>12년 만의 리메이크</span><span>2026</span></div>
+  </div>
+  <div class="sticker" style="right:60px;top:300px;transform:rotate(8deg)">댓글로 신청하기</div>
+  <div class="foot">
+    <div class="k">9.30(수) – 10.14(수)<small>추첨 80명 · 네이버페이 포인트</small></div>
+    <div class="hand" style="font-size:52px;transform:rotate(-4deg)">2026 세계 자원봉사자의 해 ✦</div>
+  </div>
+</section>
+
+<!-- 2. HOW TO : 응모 플레이리스트 -->
+<section class="card" id="c2">
+  <div class="noise"></div>
+  <div class="top"><img class="ivy" src="assets/logo_ivy_t.png" alt=""><span class="tag">HOW TO JOIN</span><img class="kvc" src="assets/logo_kvc_t.png" alt=""></div>
+  <div class="h1" style="top:170px;font-size:86px">응모 플리 <em>3곡</em> 완곡하기</div>
+  <div class="list">
+    <div class="track"><div class="no">01</div><div><h3>구독</h3><p>유튜브에서 <b>@kvc1365</b> 검색 →<br>한국중앙자원봉사센터 구독</p></div></div>
+    <div class="track"><div class="no">02</div><div><h3>좋아요 + 댓글</h3><p>'행복합니다' M/V 보고<br>나를 웃게 하는 순간을 한 줄로</p></div><div class="qr"><img src="assets/qr_mv.png" alt="M/V 바로가기 QR"></div></div>
+    <div class="track hot"><div class="no">03</div><div><h3>구글폼 인증</h3><p>계정명 + 댓글이 보이게 캡처해서 제출<br>(Google 로그인 필요)</p><span class="warn">여기까지 해야 응모 완료!</span></div><div class="qr"><img src="assets/qr_form.png" alt="참여폼 바로가기 QR"></div></div>
+  </div>
+  <div class="foot" style="bottom:56px"><div class="k" style="font-size:24px">당첨자에게는 응모 시 입력한 연락처로 경품이 발송됩니다.<small>발표 10.16(금) · 발표 전까지 구독·좋아요·댓글 유지</small></div></div>
+</section>
+
+<!-- 3. 행복 영수증 -->
+<section class="card" id="c3">
+  <div class="noise"></div>
+  <div class="top"><img class="ivy" src="assets/logo_ivy_t.png" alt=""><span class="tag">HAPPINESS RECEIPT</span><img class="kvc" src="assets/logo_kvc_t.png" alt=""></div>
+  <div class="receipt">
+    <h2>오늘의 행복 영수증</h2>
+    <div class="sub">2026.09.30 – 10.14 · @kvc1365</div>
+    <div class="dash"></div>
+    <div class="row"><span>좋아하는 노래 들으며 산책</span><span>x1</span></div>
+    <div class="row"><span>"고마워요" 한마디 듣기</span><span>x1</span></div>
+    <div class="row"><span>'행복합니다' M/V 감상</span><span>x1</span></div>
+    <div class="row"><span>내 행복 한 줄 댓글</span><span>x1</span></div>
+    <div class="dash"></div>
+    <div class="total"><span>TOTAL</span><span>행복합니다</span></div>
+    <div class="dash"></div>
+    <div class="row"><span>네이버페이 10,000원</span><span>10명</span></div>
+    <div class="row"><span>네이버페이 3,000원</span><span>70명</span></div>
+    <div class="row" style="font-size:21px;color:#666"><span>추첨 · 발표 10.16(금)</span><span></span></div>
+    <div class="barcode"></div>
+    <div class="thx">THANK YOU FOR SHARING</div>
+  </div>
+  <div class="hand" style="position:absolute;left:0;right:0;bottom:70px;text-align:center;font-size:58px">당신의 행복 영수증도 댓글로 보여주세요</div>
+</section>
+
+<!-- 4. D-3 리마인드 -->
+<section class="card" id="c4">
+  <div class="noise"></div>
+  <div class="top"><img class="ivy" src="assets/logo_ivy_t.png" alt=""><span class="tag">LAST CALL</span><img class="kvc" src="assets/logo_kvc_t.png" alt=""></div>
+  <div class="dday">D-3</div>
+  <div class="noti" style="top:560px"><div class="ic"></div><div><b>YouTube</b><p>댓글 남기셨나요?<br>좋아요까지 꾹</p></div><span class="now">지금</span></div>
+  <div class="noti" style="top:780px;transform:rotate(-1.5deg)"><div class="ic form"></div><div><b>Google Forms</b><p>앗, 인증 안 하면 응모가 안 돼요<br><span style="background:var(--lime);padding:0 8px">구글폼 제출까지 완료!</span></p></div><span class="now">1분 전</span></div>
+  <div class="hand" style="position:absolute;left:96px;top:1030px;font-size:50px;transform:rotate(-3deg)">댓글만 달고 끝내면 아쉬우니까 ✦</div>
+  <div class="foot"><div class="k">~10.14(수)까지<small>@kvc1365 · 추첨 80명 네이버페이 포인트</small></div><div class="sticker" style="position:static;transform:rotate(-5deg)">마감 임박</div></div>
+</section>
+
+</body>
+</html>
