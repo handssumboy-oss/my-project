@@ -18,6 +18,8 @@ export function addMissionItems(world, structures, items) {
  if(world===1) for(const [x,kind] of [[230,'study'],[1020,'life'],[1990,'food']])items.push({id:id++,x,y:393,r:22,type:'parcel',kind,taken:false});
  for(const index of [0,2,4]){const [x,y,w]=structures[index];items.push({id:id++,x:x+w/2,y:y-44,r:16,type:'star',taken:false});}
  items.push({id:id++,x:world===0?1500:world===1?1640:1680,y:380,r:18,type:'shield',taken:false});
+ // Replenishments remain reachable on the main path after the midpoint.
+ for(const [x,type] of [[160,'growth'],[700+world*40,'bloom'],[world===0?1880:world===1?2060:2050,'growth'],[world===0?2400:world===1?2300:2350,'bloom']])items.push({id:id++,x,y:393,r:20,type,taken:false});
 }
 export function missionStatus(game) {
  const m=game.level.mission,done=m.npcs.filter(n=>n.done).length,complete=done===m.npcs.length;

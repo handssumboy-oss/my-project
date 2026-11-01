@@ -1,3 +1,4 @@
+import { collectPower, updateHearts } from './platform-powerups.js';
 import { createMission, addMissionItems, missionStatus, missionHint } from './platform-missions.js';
 export const PLAYER = {w:40,h:60,speed:245,jump:700,gravity:1850};
 export const WORLDS = [
@@ -22,12 +23,13 @@ export function makeLevel(index){
  solids.push(...moving);
  return {spec,solids,items,enemies,mission,springs,time:0};
 }
-export function createAdventure(){return {phase:'playing',world:0,level:makeLevel(0),player:{x:80,y:370,vx:0,vy:0,w:PLAYER.w,h:PLAYER.h,facing:1,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false},hearts:3,score:0,collected:0,stomps:0,time:0,checkpoint:80,checkpointActive:false,invincible:0,events:[],particles:[],worldStartScore:0,worldResults:[]};}
+export function createAdventure(){return {phase:'playing',world:0,level:makeLevel(0),player:{x:80,y:370,vx:0,vy:0,w:PLAYER.w,h:PLAYER.h,facing:1,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false},hearts:3,score:0,collected:0,stomps:0,time:0,checkpoint:80,checkpointActive:false,invincible:0,events:[],particles:[],worldStartScore:0,worldResults:[],power:0,maxPower:0,powerFlash:0,shots:[],shotCooldown:0,purified:0};}
 export function pressJump(game){if(game.phase!=='playing')return false;game.player.jumpBuffer=.14;game.player.jumpHeld=true;return true;}
 export function releaseJump(game){game.player.jumpHeld=false;if(game.player.vy < -280)game.player.vy=-280;}
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
-function hit(game,fall=false){if(game.phase!=='playing'||(!fall&&game.invincible>0))return;if(!fall&&game.level.mission.shield>0){game.level.mission.shield=0;game.invincible=1;game.events.push({type:'shield',text:'보호막이 지켜줬어요!'});return;}game.hearts--;game.invincible=1.65;game.events.push({type:'hurt',text:fall?'마지막 깃발에서 다시 출발해요.':'앗! 잠깐 반짝이는 동안은 안전해요.'});if(game.hearts<=0){game.phase='over';return;}if(fall){const p=game.player;p.x=game.checkpoint;p.y=350;p.vx=0;p.vy=0;p.jumpBuffer=0;game.events[game.events.length-1].text='괜찮아요! 마지막 깃발에서 다시 출발.';}else{game.player.vy=-310;game.player.vx=-game.player.facing*160;}}
-export function advanceWorld(game){if(game.phase!=='worldClear'||game.world>=2)return false;game.world++;game.level=makeLevel(game.world);Object.assign(game.player,{x:80,y:370,vx:0,vy:0,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false});game.checkpoint=80;game.checkpointActive=false;game.invincible=1;game.hearts=Math.min(3,game.hearts+1);game.phase='playing';game.worldStartScore=game.score;game.events=[];return true;}
+function hit(game,fall=false){if(game.phase!=='playing'||(!fall&&game.invincible>0))return;if(!fall&&game.level.mission.shield>0){game.level.mission.shield=0;game.invincible=1;game.events.push({type:'shield',text:'보호막이 지켜줬어요!'});return;}if(!fall&&game.power>0){game.power--;game.invincible=1.65;game.powerFlash=.5;game.player.vy=-260;game.events.push({type:'powerdown',text:game.power===1?'꽃빛 능력이 보호해줬어요! 든든 자봉이로 돌아가요.':'성장 하트가 보호해줬어요! 하트는 줄지 않았어요.'});return;}
+ if(fall){game.power=0;game.shots=[];}game.hearts--;game.invincible=1.65;game.events.push({type:'hurt',text:fall?'마지막 깃발에서 다시 출발해요.':'앗! 잠깐 반짝이는 동안은 안전해요.'});if(game.hearts<=0){game.phase='over';return;}if(fall){const p=game.player;p.x=game.checkpoint;p.y=350;p.vx=0;p.vy=0;p.jumpBuffer=0;game.events[game.events.length-1].text='괜찮아요! 마지막 깃발에서 다시 출발.';}else{game.player.vy=-310;game.player.vx=-game.player.facing*160;}}
+export function advanceWorld(game){if(game.phase!=='worldClear'||game.world>=2)return false;game.world++;game.level=makeLevel(game.world);Object.assign(game.player,{x:80,y:370,vx:0,vy:0,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false});game.checkpoint=80;game.checkpointActive=false;game.invincible=1;game.hearts=Math.min(3,game.hearts+1);game.phase='playing';game.worldStartScore=game.score;game.events=[];game.shots=[];game.shotCooldown=0;return true;}
 export function updateAdventure(game,dt,input={left:false,right:false}){
  if(game.phase!=='playing')return;
  // Fixed substeps make landing and head collisions reliable even after a slow frame.
@@ -36,6 +38,7 @@ export function updateAdventure(game,dt,input={left:false,right:false}){
 }
 function stepAdventure(game,dt,input){
  const p=game.player,l=game.level;game.time+=dt;l.time+=dt;
+ updateHearts(game,dt);
  for(const s of l.solids)if(s.type==='moving'){const ox=s.x,oy=s.y;s.x=s.baseX+Math.sin(l.time*1.4)*26;s.y=s.baseY+Math.sin(l.time*1.8)*22;if(p.support===s){p.x+=s.x-ox;p.y+=s.y-oy;}}
  p.support=null;
  for(const spring of l.springs)spring.cooldown=Math.max(0,spring.cooldown-dt);
@@ -54,11 +57,12 @@ function stepAdventure(game,dt,input){
  if(p.y>620){hit(game,true);return;}
  for(const spring of l.springs)if(spring.cooldown===0&&p.vy>=0&&p.x+p.w>spring.x&&p.x<spring.x+spring.w&&p.y+p.h>=spring.y&&p.y+p.h<spring.y+35){p.vy=-890;p.grounded=false;p.coyote=0;spring.cooldown=.5;game.events.push({type:'spring',text:'슈퍼 점프! 위쪽 별을 찾아봐요!'});}
  for(const item of l.items)if(!item.taken&&overlap(p,{x:item.x-item.r,y:item.y-item.r,w:item.r*2,h:item.r*2})){item.taken=true;game.collected++;
-  const points={leaf:20,heart:10,trash:25,parcel:25,star:100,shield:0}[item.type]??10;game.score+=points;
+  const points={leaf:20,heart:10,trash:25,parcel:25,star:100,shield:0,growth:0,bloom:0}[item.type]??10;game.score+=points;
   if(item.type==='trash')l.mission.trash++;
   if(item.type==='parcel')l.mission.inventory[item.kind]++;
   if(item.type==='star')l.mission.stars++;
   if(item.type==='shield')l.mission.shield=12;
+  if(item.type==='growth'||item.type==='bloom'){collectPower(game,item.type);continue;}
   const text={trash:(l.mission.trash>3?'추가 청소 +25':`쓰레기 수거 ${l.mission.trash}/3`),parcel:'나눔 꾸러미 발견!',star:'숨은 별 +100',shield:'12초 보호막!'}[item.type]??(item.type==='leaf'?'초록 실천 +20':'+10');
   game.events.push({type:item.type==='heart'||item.type==='leaf'?'collect':'missionItem',x:item.x,y:item.y,text});}
  for(const e of l.enemies){if(!e.alive)continue;e.x+=e.vx*dt;if(e.x<e.min){e.x=e.min;e.vx=Math.abs(e.vx);}if(e.x>e.max){e.x=e.max;e.vx=-Math.abs(e.vx);}if(overlap(p,e)){if(p.vy>60&&oldBottom<=e.y+12){e.alive=false;p.vy=-430;p.grounded=false;game.stomps++;game.score+=30;game.events.push({type:'stomp',x:e.x,y:e.y,text:'먼지 퇴치! +30'});}else hit(game);}}
