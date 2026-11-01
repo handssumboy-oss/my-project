@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('가로 스크롤 이동·높이 조절 점프·일시정지·결과와 재도전', async ({page},info) => {
  test.setTimeout(90000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install();await page.goto('/');
- await expect(page.getByRole('heading',{level:1})).toContainText('한 걸음 더');await expect(page.getByRole('img',{name:'점프하는 3D 자봉이'})).toBeVisible();
+ await expect(page.getByRole('heading',{level:1})).toContainText('한 걸음 더');await expect(page.getByRole('img',{name:'정면이 보이는 3D 자봉이'})).toBeVisible();
  await page.screenshot({path:`test-results/platform-home-${info.project.name}.png`,fullPage:true});
  await page.getByRole('button',{name:/모험 시작하기/}).click();const canvas=page.locator('#game');
  await page.keyboard.down('ArrowRight');await page.clock.runFor(600);await page.keyboard.up('ArrowRight');expect(Number(await canvas.getAttribute('data-player-x'))).toBeGreaterThan(180);
