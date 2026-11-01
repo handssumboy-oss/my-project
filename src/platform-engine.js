@@ -1,0 +1,49 @@
+export const PLAYER = {w:40,h:60,speed:245,jump:700,gravity:1850};
+export const WORLDS = [
+ {name:'초록 공원',tag:'잃어버린 초록빛을 찾아서',sky:['#b7e2dd','#f8e9b9'],grass:'#7fbc89',soil:'#cfa77d',accent:'#eab974',length:2800,goal:2640,gaps:[[770,890],[1640,1770]],checkpoint:1390},
+ {name:'나눔 골목',tag:'작은 나눔이 이어지는 길',sky:['#edc7ba','#ffedbb'],grass:'#baa995',soil:'#b38e85',accent:'#9baac8',length:3000,goal:2840,gaps:[[860,1000],[1790,1930],[2400,2530]],checkpoint:1580},
+ {name:'별빛 이웃 마을',tag:'마지막 온기를 전하러 가요',sky:['#666fa0','#d5a6b6'],grass:'#83a9ab',soil:'#8a8eaa',accent:'#f5cd8c',length:3100,goal:2940,gaps:[[910,1050],[1850,1990],[2470,2610]],checkpoint:1630},
+];
+export function makeLevel(index){
+ const spec=WORLDS[index],solids=[];let start=0;
+ for(const [left,right] of spec.gaps){solids.push({x:start,y:430,w:left-start,h:180,type:'ground'});start=right;}
+ solids.push({x:start,y:430,w:spec.length-start,h:180,type:'ground'});
+ const structures=index===0?[[360,326,126],[1080,330,126],[1248,237,84],[1910,326,126],[2210,280,126]]:index===1?[[390,326,126],[1190,330,126],[1358,237,126],[2080,326,126],[2640,326,84]]:[[400,326,126],[1190,326,126],[1358,230,84],[2110,326,126],[2740,326,84]];
+ structures.forEach(([x,y,w],j)=>{for(let a=0;a<w;a+=42)solids.push({x:x+a,y,w:42,h:36,type:a===42||w===84&&a===0?'gift':'brick',used:false});});
+ const items=[];let id=0;
+ for(const solid of solids.filter(s=>s.type==='ground'))for(let x=solid.x+120;x<solid.x+solid.w-35;x+=115)items.push({id:id++,x,y:385,r:12,type:id%4===0?'leaf':'heart',taken:false});
+ structures.forEach(([x,y,w])=>{for(let a=20;a<w;a+=42)items.push({id:id++,x:x+a,y:y-33,r:12,type:'heart',taken:false});});
+ const enemies=(index===0?[570,1170,2010,2420]:index===1?[590,1340,2180,2710]:[590,1340,2210,2780]).map((x,i)=>({x,y:400,w:34,h:30,origin:x,min:x-48,max:x+62,vx:(i%2?1:-1)*(35+index*8),alive:true}));
+ return {spec,solids,items,enemies};
+}
+export function createAdventure(){return {phase:'playing',world:0,level:makeLevel(0),player:{x:80,y:370,vx:0,vy:0,w:PLAYER.w,h:PLAYER.h,facing:1,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false},hearts:3,score:0,collected:0,stomps:0,time:0,checkpoint:80,checkpointActive:false,invincible:0,events:[],particles:[],worldStartScore:0};}
+export function pressJump(game){if(game.phase!=='playing')return false;game.player.jumpBuffer=.14;game.player.jumpHeld=true;return true;}
+export function releaseJump(game){game.player.jumpHeld=false;if(game.player.vy < -280)game.player.vy=-280;}
+const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+function hit(game,fall=false){if(game.phase!=='playing'||(!fall&&game.invincible>0))return;game.hearts--;game.invincible=1.65;game.events.push({type:'hurt',text:fall?'마지막 깃발에서 다시 출발해요.':'앗! 잠깐 반짝이는 동안은 안전해요.'});if(game.hearts<=0){game.phase='over';return;}if(fall){const p=game.player;p.x=game.checkpoint;p.y=350;p.vx=0;p.vy=0;p.jumpBuffer=0;game.events[game.events.length-1].text='괜찮아요! 마지막 깃발에서 다시 출발.';}else{game.player.vy=-310;game.player.vx=-game.player.facing*160;}}
+export function advanceWorld(game){if(game.phase!=='worldClear'||game.world>=2)return false;game.world++;game.level=makeLevel(game.world);Object.assign(game.player,{x:80,y:370,vx:0,vy:0,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false});game.checkpoint=80;game.checkpointActive=false;game.invincible=1;game.hearts=Math.min(3,game.hearts+1);game.phase='playing';game.worldStartScore=game.score;game.events=[];return true;}
+export function updateAdventure(game,dt,input={left:false,right:false}){
+ if(game.phase!=='playing')return;
+ // Fixed substeps make landing and head collisions reliable even after a slow frame.
+ game.events=[];const steps=Math.max(1,Math.ceil(dt/(1/120))),step=dt/steps;
+ for(let i=0;i<steps&&game.phase==='playing';i++)stepAdventure(game,step,input);
+}
+function stepAdventure(game,dt,input){
+ const p=game.player,l=game.level;game.time+=dt;game.invincible=Math.max(0,game.invincible-dt);p.jumpBuffer=Math.max(0,p.jumpBuffer-dt);p.coyote=p.grounded?.11:Math.max(0,p.coyote-dt);
+ const dir=Number(!!input.right)-Number(!!input.left),target=dir*PLAYER.speed;p.vx+=(target-p.vx)*Math.min(1,dt*(dir?16:22));if(dir)p.facing=dir;
+ if(p.jumpBuffer>0&&p.coyote>0){p.vy=-PLAYER.jump;p.grounded=false;p.coyote=0;p.jumpBuffer=0;game.events.push({type:'jump'});}
+ p.vy=Math.min(950,p.vy+PLAYER.gravity*dt);
+ p.x+=p.vx*dt;
+ for(const s of l.solids)if(overlap(p,s)){if(p.vx>0)p.x=s.x-p.w;else if(p.vx<0)p.x=s.x+s.w;p.vx=0;}
+ p.x=Math.max(0,Math.min(l.spec.length-p.w,p.x));
+ const oldBottom=p.y+p.h;p.y+=p.vy*dt;p.grounded=false;
+ for(const s of l.solids)if(overlap(p,s)){
+  if(p.vy>=0&&oldBottom<=s.y+4){p.y=s.y-p.h;p.vy=0;p.grounded=true;}
+  else if(p.vy<0){p.y=s.y+s.h;p.vy=0;if(s.type==='gift'&&!s.used){s.used=true;game.score+=50;game.collected++;game.events.push({type:'gift',x:s.x+21,y:s.y,text:'나눔 발견! +50'});}}
+ }
+ if(p.y>620){hit(game,true);return;}
+ for(const item of l.items)if(!item.taken&&overlap(p,{x:item.x-item.r,y:item.y-item.r,w:item.r*2,h:item.r*2})){item.taken=true;game.collected++;game.score+=item.type==='leaf'?20:10;game.events.push({type:'collect',x:item.x,y:item.y,text:item.type==='leaf'?'초록 실천 +20':'+10'});}
+ for(const e of l.enemies){if(!e.alive)continue;e.x+=e.vx*dt;if(e.x<e.min){e.x=e.min;e.vx=Math.abs(e.vx);}if(e.x>e.max){e.x=e.max;e.vx=-Math.abs(e.vx);}if(overlap(p,e)){if(p.vy>60&&oldBottom<=e.y+12){e.alive=false;p.vy=-430;p.grounded=false;game.stomps++;game.score+=30;game.events.push({type:'stomp',x:e.x,y:e.y,text:'먼지 퇴치! +30'});}else hit(game);}}
+ if(!game.checkpointActive&&p.x>=l.spec.checkpoint){game.checkpoint=l.spec.checkpoint;game.checkpointActive=true;game.events.push({type:'checkpoint',text:'중간 깃발 도착! 여기서 다시 시작할 수 있어요.'});}
+ if(p.x>=l.spec.goal&&p.grounded){game.score+=100;game.phase=game.world===2?'clear':'worldClear';game.events.push({type:'finish',text:'우리 동네에 온기를 더했어요! +100'});}
+}
