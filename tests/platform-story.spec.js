@@ -1,25 +1,28 @@
 import {test,expect} from '@playwright/test';
 import {storyRoute} from './helpers/story-route.js';
 test('실제 키 입력과 대화로 세 동네 목표를 수행하고 배지 획득',async({page},info)=>{
- test.setTimeout(120000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install();await page.goto('/');await page.getByRole('button',{name:/모험 시작하기/}).click();
+ test.setTimeout(120000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install({time:new Date('2026-01-01T09:00:00')});await page.goto('/');
+ // Pause the fake clock so only runFor advances frames; the boss fight replays the exact simulated timings.
+ await page.clock.pauseAt(new Date('2026-01-01T09:10:00'));await page.getByRole('button',{name:/모험 시작하기/}).click();
  for(const route of storyRoute()){
-  let time=0;await page.keyboard.down('ArrowRight');
+  let time=0,dir=1;const hold=async d=>{await page.keyboard.up('ArrowRight');await page.keyboard.up('ArrowLeft');if(d)await page.keyboard.down(d>0?'ArrowRight':'ArrowLeft');dir=d;};await hold(1);
   for(const action of route.actions){
    await page.clock.runFor(Math.max(0,action.at-time));time=Math.max(time,action.at);
    if(action.type==='jump'){await page.keyboard.up('Space');await page.keyboard.down('Space');}
+   else if(action.type==='move')await hold(action.dir);
    else{
     for(let i=0;i<6&&!(await page.locator('#interact').isVisible());i++){await page.clock.runFor(25);time+=25;}
-    await expect(page.locator('#interact')).toBeVisible();await page.keyboard.up('ArrowRight');await page.keyboard.press('e');
+    await expect(page.locator('#interact')).toBeVisible();const resume=dir;await hold(0);await page.keyboard.press('e');
     await expect(page.locator('[data-answer]')).toHaveCount(2);
     if(route.world===0){await page.locator('[data-answer="1"]').click();await expect(page.locator('#dialogue-feedback')).not.toBeEmpty();}
     await page.screenshot({path:`test-results/story-dialog-${route.world}-${info.project.name}.png`});
-    await page.locator(`[data-answer="${action.answer}"]`).click();await expect(page.getByRole('button',{name:/계속 모험하기/})).toBeVisible();await page.getByRole('button',{name:/계속 모험하기/}).click();await page.keyboard.down('ArrowRight');
+    await page.locator(`[data-answer="${action.answer}"]`).click();await expect(page.getByRole('button',{name:/계속 모험하기/})).toBeVisible();await page.getByRole('button',{name:/계속 모험하기/}).click();await hold(resume);
    }
   }
-  await page.clock.runFor(Math.max(0,route.duration-time)+300);await page.keyboard.up('ArrowRight');await page.keyboard.up('Space');
+  await page.clock.runFor(Math.max(0,route.duration-time)+300);await hold(0);await page.keyboard.up('Space');
   if(route.world<2){await expect(page.getByRole('button',{name:/으로 출발/})).toBeVisible();await page.getByRole('button',{name:/으로 출발/}).click();}
  }
- await expect(page.getByRole('heading',{level:2})).toContainText('세 동네, 모험 성공');await expect(page.locator('.earned-badges>span')).toHaveCount(3);await page.screenshot({path:`test-results/story-complete-${info.project.name}.png`});expect(errors).toEqual([]);
+ await expect(page.getByRole('heading',{level:2})).toContainText('세 동네, 모험 성공');await expect(page.locator('.earned-badges>span')).toHaveCount(3);await expect(page.locator('.stats')).toContainText('3 / 3');await expect(page.getByText('도전 모드가 열렸어요')).toBeVisible();await page.screenshot({path:`test-results/story-complete-${info.project.name}.png`});expect(errors).toEqual([]);
 });
 test('오른쪽·왼쪽 시선, 걷기·점프 프레임과 스프라이트 알파',async({page})=>{
  await page.clock.install();const response=page.waitForResponse(r=>r.url().includes('jabongi-front-motion')&&r.status()===200);await page.goto('/');const sheetURL=(await response).url();

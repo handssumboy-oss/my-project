@@ -1,3 +1,4 @@
+import { bossCleared } from './platform-features.js';
 export const MISSION_NAMES = ['공원 되살리기','세 집에 나눔 전달','이웃의 마음 듣기'];
 export const BADGES = ['초록 지킴이','나눔 배달부','마음 친구'];
 export function createMission(world) {
@@ -24,7 +25,8 @@ export function addMissionItems(world, structures, items) {
 export function missionStatus(game) {
  const m=game.level.mission,done=m.npcs.filter(n=>n.done).length,complete=done===m.npcs.length;
  const detail=game.world===0?(complete?'공원 정리 완료!':m.trash>=3?'지킴이에게 분리배출하기':`쓰레기 ${m.trash}/3개 수거`):game.world===1?`나눔 전달 ${done}/3집`:`이웃 돕기 ${done}/3명`;
- return {title:MISSION_NAMES[game.world],detail,complete,done,target:m.npcs.length,stars:m.stars,badge:BADGES[game.world]};
+ const boss=game.level.boss,bossLeft=complete&&!bossCleared(game.level);
+ return {title:MISSION_NAMES[game.world],detail:bossLeft?`${boss.name} 정화 ${boss.maxHp-boss.hp}/${boss.maxHp}`:detail,complete,done,target:m.npcs.length,stars:m.stars,badge:BADGES[game.world],bossLeft};
 }
 export function nearbyNeighbor(game) {
  const p=game.player;
@@ -33,7 +35,7 @@ export function nearbyNeighbor(game) {
 export function missionHint(game) {
  const m=game.level.mission;
  if(game.world===0&&m.trash<3){const item=game.level.items.filter(i=>i.type==='trash'&&!i.taken).sort((a,b)=>Math.abs(a.x-game.player.x)-Math.abs(b.x-game.player.x))[0];return `${item&&item.x<game.player.x?'← 왼쪽':'→ 오른쪽'}의 쓰레기를 모아요 (${m.trash}/3).`;}
- const npc=m.npcs.find(n=>!n.done);if(!npc)return '목적지 깃발로 가요!';
+ const npc=m.npcs.find(n=>!n.done);if(!npc)return bossCleared(game.level)?'목적지 깃발로 가요!':`→ ${game.level.boss.obj} 밟거나 정화 하트로 맞혀 장벽을 걷어요!`;
  if(game.world===1&&!m.inventory[npc.kind]){const item=game.level.items.find(i=>i.type==='parcel'&&i.kind===npc.kind&&!i.taken);return `${item&&item.x<game.player.x?'← 왼쪽':'→ 오른쪽'}에서 ${ {study:'공부',life:'생활',food:'간식'}[npc.kind]} 꾸러미를 찾아요.`;}
  return `${npc.x<game.player.x?'← 왼쪽':'→ 오른쪽'} ${npc.name} 가까이에서 E 또는 대화 버튼!`;
 }

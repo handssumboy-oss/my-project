@@ -114,3 +114,13 @@ footer a { text-decoration: none; }
 .game-message {top:247px;}.action-controls {display:flex;gap:10px;}.attack {width:94px;background:#efd3dfe8;color:#a87990;border-color:#fae4e9;box-shadow:0 4px 0 #b78f9d;font-size:12px;font-weight:800;}.attack.cooling {opacity:.65;}.best-power {color:#a18494!important;font-size:11px!important;}
 @media(max-width:600px){.power-bar{top:190px;left:14px;max-width:calc(100% - 28px);padding:7px 11px;gap:7px}.power-bar>span{font-size:17px}.power-bar strong{font-size:10px}.power-bar small{font-size:8px}.game-message{top:235px}.action-controls{gap:8px}.attack{width:76px;font-size:11px}.jump{width:96px}}
 @media(max-width:360px){.direction{gap:6px}.direction .control{width:47px}.attack{width:62px;font-size:10px}.jump{width:82px}.power-bar{gap:6px}.power-bar small{font-size:7px}.power-bar strong{font-size:9px}}
+/* Challenge mode, neighborhood gimmicks and boss summary. */
+.challenge-button { display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:265px;margin-top:12px;padding:12px 18px;border-radius:13px;border:1px solid #c8b6d6;background:#f4eef8e8;color:#6d5a85;font-size:13px;font-weight:800;box-shadow:0 4px 0 #b9a6c955; }
+.challenge-button small { font-size:9px;font-weight:500;color:#8f80a3; }
+.challenge-lock { margin-top:12px !important;font-size:10px !important;color:#9aa38d !important; }
+.challenge-tag { display:inline-block;margin-right:8px;padding:3px 6px;border-radius:6px;background:#8a7fa0;color:#fff7ff !important;font-size:8px;letter-spacing:1px; }
+.world-extra { color:#a58fb5 !important;font-weight:600; }
+.unlock-note { margin:-8px 0 14px;color:#8a72a3 !important;font-weight:700; }
+.stats { flex-wrap:wrap;gap:22px; }
+@media(max-width:600px) { .challenge-button { width:100%;align-items:center; } .stats { gap:14px 18px; } .challenge-tag { display:block;margin:0 0 4px;width:max-content; } }
+.modal-overlay { overflow-y:auto;align-items:safe center; }

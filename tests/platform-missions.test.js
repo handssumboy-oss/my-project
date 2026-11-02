@@ -4,7 +4,7 @@ import {createAdventure,updateAdventure,advanceWorld} from '../src/platform-engi
 import {answerNeighbor,nearbyNeighbor,missionStatus} from '../src/platform-missions.js';
 const tick=g=>updateAdventure(g,1/60,{});
 function visit(g,x){Object.assign(g.player,{x:x-20,y:370,vy:0,vx:0,grounded:true});}
-function next(g){g.level.mission.npcs.forEach(n=>n.done=true);Object.assign(g.player,{x:g.level.spec.goal,y:370,vy:0,vx:0,grounded:true});tick(g);advanceWorld(g);}
+function next(g){g.level.mission.npcs.forEach(n=>n.done=true);g.level.boss.hp=0;Object.assign(g.player,{x:g.level.spec.goal,y:370,vy:0,vx:0,grounded:true});tick(g);advanceWorld(g);}
 test('공원 미션: 쓰레기 수거·잘못된 답 힌트·올바른 분리배출·중복 보상 없음',()=>{
  const g=createAdventure();visit(g,2550);assert.equal(answerNeighbor(g,'recycle',0).ok,false);
  for(const item of g.level.items.filter(i=>i.type==='trash').slice(0,3)){visit(g,item.x);tick(g);}

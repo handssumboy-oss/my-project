@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {storyRoute} from './helpers/story-route.js';
 test('실제 획득으로 성장·꽃빛 진화, 하트 발사·일시정지·먼지 정화',async({page},info)=>{
- test.setTimeout(90000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install();await page.goto('/');await page.getByRole('button',{name:/모험 시작하기/}).click();
+ test.setTimeout(90000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install({time:new Date('2026-01-01T09:00:00')});await page.goto('/');await page.clock.pauseAt(new Date('2026-01-01T09:10:00'));await page.getByRole('button',{name:/모험 시작하기/}).click();
  const canvas=page.locator('#game');await expect(page.getByRole('button',{name:'정화 하트 발사'})).toBeHidden();
  await page.keyboard.down('ArrowRight');await page.clock.runFor(250);await expect(canvas).toHaveAttribute('data-power-level','1');await expect(page.locator('#power-name')).toHaveText('든든 자봉이');
  let time=250;for(const action of storyRoute()[0].actions.filter(a=>a.type==='jump'&&a.at<=2500)){await page.clock.runFor(action.at-time);time=action.at;await page.keyboard.up('Space');await page.keyboard.down('Space');}

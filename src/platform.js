@@ -2,17 +2,24 @@ import { POWER_FORMS, shootHeart } from './platform-powerups.js';
 import { createAdventure, updateAdventure, pressJump, releaseJump, advanceWorld, WORLDS } from './platform-engine.js';
 import { renderAdventure, adventureViewWidth, spriteFrame } from './platform-renderer.js';
 import { missionStatus, missionHint, nearbyNeighbor, answerNeighbor, BADGES } from './platform-missions.js';
+import { BOSSES, GIMMICKS } from './platform-features.js';
+import { createAudio } from './platform-audio.js';
 const spriteURL = new URL('../assets/characters/jabongi-front-motion.png', import.meta.url).href;
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Storage is optional. */ } };
 let best = Number(read('jabongi-adventure-best', 0));
 if (!Number.isFinite(best) || best < 0) best = 0;
+let challengeBest = Number(read('jabongi-challenge-best', 0));
+if (!Number.isFinite(challengeBest) || challengeBest < 0) challengeBest = 0;
+let unlocked = read('jabongi-adventure-cleared', false) === true;
 let sound = read('jabongi-sound', false) === true;
-let mode = 'home', game = createAdventure(), camera = 0, ambient = 0, last = 0, messageUntil = 0, audio;
+const sfx = createAudio(), reduceMotion = matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const fx = {shake:0, sparks:[]};
+let mode = 'home', game = createAdventure(), camera = 0, ambient = 0, last = 0, messageUntil = 0;
 const keys = new Set(), touches = new Map();
 let tapDirection = 0, tapUntil = 0;
 const app = document.querySelector('#app');
-app.innerHTML = `<div class="site"><header class="header"><a class="brand" href="./"><span class="brand-icon">♥</span><span>자봉이의 동네 구하기<small>A LITTLE NEIGHBORHOOD ADVENTURE</small></span></a><div class="header-right"><span class="best">BEST <b id="best">${best.toLocaleString()}</b></span><button id="sound" class="icon-button" aria-label="사운드 켜기" aria-pressed="false">♪</button></div></header><main><div class="game-shell"><canvas id="game" tabindex="0" role="img" aria-label="자봉이 가로 스크롤 모험. 좌우 방향키로 이동하고 스페이스로 점프합니다." aria-describedby="instructions"></canvas><div class="hud hidden" id="hud"><div class="hud-group"><div class="hud-pill"><small>SCORE</small><b id="score">0000</b></div><div class="hud-pill hearts"><small>LIFE</small><b id="hearts" aria-label="남은 하트 3개">♥♥♥</b></div></div><div class="hud-group hud-right"><div class="world-label"><span id="world-number">WORLD 01</span><b id="world-name">초록 공원</b></div><button class="icon-button" id="pause" aria-label="일시정지">Ⅱ</button></div></div><div class="progress hidden" id="progress"><small id="checkpoint-label">깃발을 향해 출발!</small><div class="progress-track" role="progressbar" aria-label="동네 탐험 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div></div><div class="quest-panel hidden" id="quest-panel"><span id="quest-icon">♧</span><div><strong id="quest-title"></strong><small id="quest-detail"></small></div><b id="stars" aria-label="별 0개">☆☆☆</b></div><button id="interact" class="interact-button hidden" aria-label="이웃과 대화하기">E · 대화하기</button><div id="power-bar" class="power-bar hidden"><span id="power-icon">♡</span><strong id="power-name">기본 자봉이</strong><small id="power-tip">성장 하트를 찾아보세요</small></div><div class="game-message hidden" id="message"><span></span></div><div class="controls hidden" id="controls"><div class="direction"><button class="control" data-direction="left" aria-label="왼쪽으로 이동">←</button><button class="control" data-direction="right" aria-label="오른쪽으로 이동">→</button></div><span class="control-note">← → MOVE · SPACE JUMP · X HEART · E TALK</span><div class="action-controls"><button id="attack" class="control attack hidden" data-direction="attack" aria-label="정화 하트 발사">♡ 발사</button><button class="control jump" data-direction="jump" aria-label="점프">JUMP ↑</button></div></div><div class="overlay" id="overlay"></div></div><section class="worlds" id="instructions" aria-label="모험과 조작 방법">${WORLDS.map((w,i) => `<div class="world-card"><span>${['♧','◇','✦'][i]}</span><div><small>WORLD 0${i+1} · ${['WALK & JUMP','SHARE & DISCOVER','TOGETHER, WE SHINE'][i]}</small><strong>${w.name}</strong><p>${['쓰레기를 모아 지킴이와 분리배출해요.','책·생활·간식 꾸러미를 세 집에 전해요.','세 이웃의 이야기를 듣고 마음을 존중해요.'][i]}</p></div></div>`).join('')}</section></main><footer><span>한국중앙자원봉사센터 · 작은 행동이 모이면 우리 동네가 달라져요!</span><span><a href="./retro.html">레트로 러너 ↗</a> &nbsp; / &nbsp; <a href="./classic.html">차근차근 미션 ↗</a></span></footer></div>`;
+app.innerHTML = `<div class="site"><header class="header"><a class="brand" href="./"><span class="brand-icon">♥</span><span>자봉이의 동네 구하기<small>A LITTLE NEIGHBORHOOD ADVENTURE</small></span></a><div class="header-right"><span class="best"><span id="best-label">BEST</span> <b id="best">${best.toLocaleString()}</b></span><button id="sound" class="icon-button" aria-label="사운드 켜기" aria-pressed="false">♪</button></div></header><main><div class="game-shell"><canvas id="game" tabindex="0" role="img" aria-label="자봉이 가로 스크롤 모험. 좌우 방향키로 이동하고 스페이스로 점프합니다." aria-describedby="instructions"></canvas><div class="hud hidden" id="hud"><div class="hud-group"><div class="hud-pill"><small>SCORE</small><b id="score">0000</b></div><div class="hud-pill hearts"><small>LIFE</small><b id="hearts" aria-label="남은 하트 3개">♥♥♥</b></div></div><div class="hud-group hud-right"><div class="world-label"><span id="challenge-tag" class="challenge-tag hidden">CHALLENGE</span><span id="world-number">WORLD 01</span><b id="world-name">초록 공원</b></div><button class="icon-button" id="pause" aria-label="일시정지">Ⅱ</button></div></div><div class="progress hidden" id="progress"><small id="checkpoint-label">깃발을 향해 출발!</small><div class="progress-track" role="progressbar" aria-label="동네 탐험 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div></div><div class="quest-panel hidden" id="quest-panel"><span id="quest-icon">♧</span><div><strong id="quest-title"></strong><small id="quest-detail"></small></div><b id="stars" aria-label="별 0개">☆☆☆</b></div><button id="interact" class="interact-button hidden" aria-label="이웃과 대화하기">E · 대화하기</button><div id="power-bar" class="power-bar hidden"><span id="power-icon">♡</span><strong id="power-name">기본 자봉이</strong><small id="power-tip">성장 하트를 찾아보세요</small></div><div class="game-message hidden" id="message"><span></span></div><div class="controls hidden" id="controls"><div class="direction"><button class="control" data-direction="left" aria-label="왼쪽으로 이동">←</button><button class="control" data-direction="right" aria-label="오른쪽으로 이동">→</button></div><span class="control-note">← → MOVE · SPACE JUMP · X HEART · E TALK</span><div class="action-controls"><button id="attack" class="control attack hidden" data-direction="attack" aria-label="정화 하트 발사">♡ 발사</button><button class="control jump" data-direction="jump" aria-label="점프">JUMP ↑</button></div></div><div class="overlay" id="overlay"></div></div><section class="worlds" id="instructions" aria-label="모험과 조작 방법">${WORLDS.map((w,i) => `<div class="world-card"><span>${['♧','◇','✦'][i]}</span><div><small>WORLD 0${i+1} · ${['WALK & JUMP','SHARE & DISCOVER','TOGETHER, WE SHINE'][i]}</small><strong>${w.name}</strong><p>${['쓰레기를 모아 지킴이와 분리배출해요.','책·생활·간식 꾸러미를 세 집에 전해요.','세 이웃의 이야기를 듣고 마음을 존중해요.'][i]}</p><p class="world-extra">${GIMMICKS[i]} · 보스 ${BOSSES[i].name}</p></div></div>`).join('')}</section></main><footer><span>한국중앙자원봉사센터 · 작은 행동이 모이면 우리 동네가 달라져요!</span><span><a href="./retro.html">레트로 러너 ↗</a> &nbsp; / &nbsp; <a href="./classic.html">차근차근 미션 ↗</a></span></footer></div>`;
 const $ = id => document.getElementById(id), canvas = $('game'), ctx = canvas.getContext('2d'), overlay = $('overlay');
 const sprite = new Image(); sprite.src = spriteURL;
 let width = 0, height = 0;
@@ -22,49 +29,44 @@ function resize() {
 }
 new ResizeObserver(resize).observe(canvas); resize();
 function soundUI() { $('sound').textContent = sound ? '♫' : '♪'; $('sound').setAttribute('aria-label', sound ? '사운드 끄기' : '사운드 켜기'); $('sound').setAttribute('aria-pressed', String(sound)); }
-function tone(type) {
-  if (!sound) return;
-  try {
-    audio ??= new (window.AudioContext || window.webkitAudioContext)(); audio.resume().catch(() => {});
-    const o = audio.createOscillator(), gain = audio.createGain(); o.connect(gain); gain.connect(audio.destination); o.type = 'triangle';
-    o.frequency.setValueAtTime(type === 'hurt' ? 180 : type === 'jump' ? 380 : 850, audio.currentTime); o.frequency.exponentialRampToValueAtTime(type === 'hurt' ? 90 : 1150, audio.currentTime + .13);
-    gain.gain.setValueAtTime(.045, audio.currentTime); gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .2); o.start(); o.stop(audio.currentTime + .2);
-  } catch { /* The game is fully playable without audio. */ }
-}
-soundUI(); $('sound').onclick = () => { sound = !sound; write('jabongi-sound', sound); soundUI(); tone('collect'); };
+function tone(type) { if (sound) sfx.play(type); }
+function music() { if (sound && mode === 'playing') sfx.music(game.world); else sfx.stop(); }
+soundUI(); $('sound').onclick = () => { sound = !sound; write('jabongi-sound', sound); soundUI(); tone('collect'); music(); };
 function announce(text) { $('announcement').textContent = text; }
 function message(text, seconds = 3) { $('message').classList.remove('hidden'); $('message').firstElementChild.textContent = text; messageUntil = game.time + seconds; announce(text); }
 function ui(visible) { if(!visible)$('interact').classList.add('hidden'); for (const id of ['hud','progress','controls','quest-panel','power-bar']) $(id).classList.toggle('hidden', !visible); }
+function showBest() { const c = game.challenge && mode !== 'home'; $('best-label').textContent = c ? 'CHALLENGE BEST' : 'BEST'; $('best').textContent = (c ? challengeBest : best).toLocaleString(); }
 function clearInput() { keys.clear(); touches.clear(); tapDirection = 0; releaseJump(game); app.querySelectorAll('.pressed').forEach(b => b.classList.remove('pressed')); }
 function home() {
-  clearInput(); mode = 'home'; game = createAdventure(); camera = 0; ui(false); $('message').classList.add('hidden'); overlay.className = 'overlay';
-  overlay.innerHTML = `<div class="home-copy"><span class="eyebrow">JABONGI WORLD · STORY ADVENTURE</span><h1>폴짝,<em>한 걸음 더.</em></h1><p>작은 발판을 넘어, 더 따뜻한 동네로.<br><strong>공원 청소, 나눔 배달, 이웃의 부탁까지!</strong></p><button class="primary" id="start">모험 시작하기 <span>→</span></button><div class="home-meta"><span>← → 직접 이동</span><span>↑ 꾹 눌러 점프</span><span>♥ 아이템 먹고 진화</span></div></div><div class="speech">성장 하트와 나눔 꽃을 찾아봐! ✿</div><div class="hero-sticker transparent motion-sticker"><img src="${spriteURL}" alt="정면이 보이는 3D 자봉이"></div><span class="edition">SMALL STEPS / A WARMER WORLD</span>`;
-  $('start').onclick = start;
+  clearInput(); mode = 'home'; game = createAdventure(); camera = 0; ui(false); music(); showBest(); $('message').classList.add('hidden'); overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="home-copy"><span class="eyebrow">JABONGI WORLD · STORY ADVENTURE</span><h1>폴짝,<em>한 걸음 더.</em></h1><p>작은 발판을 넘어, 더 따뜻한 동네로.<br><strong>공원 청소, 나눔 배달, 이웃의 부탁까지!</strong></p><button class="primary" id="start">모험 시작하기 <span>→</span></button>${unlocked ? '<button class="challenge-button" id="challenge">✦ 도전 모드 <small>하트 2개 · 더 빠른 먼지 · 강한 보스</small></button>' : '<p class="challenge-lock">🔒 세 동네를 완주하면 도전 모드가 열려요</p>'}<div class="home-meta"><span>← → 직접 이동</span><span>↑ 꾹 눌러 점프</span><span>♥ 아이템 먹고 진화</span><span>☁ 보스 정화</span></div></div><div class="speech">성장 하트와 나눔 꽃을 찾아봐! ✿</div><div class="hero-sticker transparent motion-sticker"><img src="${spriteURL}" alt="정면이 보이는 3D 자봉이"></div><span class="edition">SMALL STEPS / A WARMER WORLD</span>`;
+  $('start').onclick = () => start(false); if (unlocked) $('challenge').onclick = () => start(true);
 }
-function start() { clearInput(); game = createAdventure(); camera = 0; mode = 'playing'; overlay.className = 'overlay hidden'; ui(true); message('공원 지킴이의 부탁! 쓰레기 3개를 모아 전해 주세요.', 5); updateHUD(); canvas.focus({preventScroll:true}); }
+function start(challenge = game.challenge) { clearInput(); game = createAdventure({challenge: challenge === true}); camera = 0; fx.sparks = []; fx.shake = 0; mode = 'playing'; overlay.className = 'overlay hidden'; ui(true); $('challenge-tag').classList.toggle('hidden', !game.challenge); showBest(); message(game.challenge ? '도전 모드! 하트 2개로 세 동네를 지켜 주세요.' : '공원 지킴이의 부탁! 쓰레기 3개를 모아 전해 주세요.', 5); updateHUD(); music(); canvas.focus({preventScroll:true}); }
 function pause() {
   if (mode !== 'playing') return;
-  clearInput(); mode = 'paused'; game.phase = 'paused'; overlay.className = 'overlay modal-overlay';
+  clearInput(); mode = 'paused'; game.phase = 'paused'; music(); overlay.className = 'overlay modal-overlay';
   overlay.innerHTML = `<div class="modal"><span class="eyebrow">A LITTLE BREAK</span><h2>천천히 가도 괜찮아요.</h2><p>쉬는 동안 자봉이와 동네도 기다려요.</p><button class="primary" id="resume">이어서 모험하기 →</button><button class="secondary text-link" id="restart">처음부터 다시 하기</button></div>`;
-  $('resume').onclick = () => { clearInput(); mode = 'playing'; game.phase = 'playing'; overlay.className = 'overlay hidden'; canvas.focus({preventScroll:true}); };
-  $('restart').onclick = start; $('resume').focus({preventScroll:true});
+  $('resume').onclick = () => { clearInput(); mode = 'playing'; game.phase = 'playing'; overlay.className = 'overlay hidden'; music(); canvas.focus({preventScroll:true}); };
+  $('restart').onclick = () => start(); $('resume').focus({preventScroll:true});
 }
 $('pause').onclick = pause;
 function worldClear() {
-  clearInput(); mode = 'worldClear'; ui(false); $('message').classList.add('hidden'); overlay.className = 'overlay modal-overlay';
-  overlay.innerHTML = `<div class="modal"><span class="eyebrow">WORLD 0${game.world+1} COMPLETE</span><h2>${WORLDS[game.world].name}에<br>온기를 더했어요!</h2><p>${BADGES[game.world]} 배지를 받았어요!<br>숨은 별 ${game.level.mission.stars}/3개 · 다음 동네에서 하트 +1</p><div class="world-stars">${"★".repeat(game.level.mission.stars)}${"☆".repeat(3-game.level.mission.stars)}</div><div class="result-score">${game.score}<small>점</small></div><button class="primary" id="next-world">${WORLDS[game.world+1].name}으로 출발 →</button></div>`;
-  $('next-world').onclick = () => { advanceWorld(game); camera = 0; mode = 'playing'; overlay.className = 'overlay hidden'; ui(true); updateHUD(); message(`WORLD 0${game.world+1} · ${WORLDS[game.world].tag}`, 4); canvas.focus({preventScroll:true}); };
+  clearInput(); mode = 'worldClear'; music(); ui(false); $('message').classList.add('hidden'); overlay.className = 'overlay modal-overlay';
+  overlay.innerHTML = `<div class="modal"><span class="eyebrow">WORLD 0${game.world+1} COMPLETE</span><h2>${WORLDS[game.world].name}에<br>온기를 더했어요!</h2><p>${BADGES[game.world]} 배지를 받았어요! ${BOSSES[game.world].name}도 정화했어요.<br>숨은 별 ${game.level.mission.stars}/3개 · 다음 동네에서 하트 +1</p><div class="world-stars">${"★".repeat(game.level.mission.stars)}${"☆".repeat(3-game.level.mission.stars)}</div><div class="result-score">${game.score}<small>점</small></div><button class="primary" id="next-world">${WORLDS[game.world+1].name}으로 출발 →</button></div>`;
+  $('next-world').onclick = () => { advanceWorld(game); camera = 0; mode = 'playing'; overlay.className = 'overlay hidden'; ui(true); updateHUD(); message(`WORLD 0${game.world+1} · ${WORLDS[game.world].tag} · ${GIMMICKS[game.world]}`, 4); music(); canvas.focus({preventScroll:true}); };
   $('next-world').focus({preventScroll:true}); announce('깃발에 도착했어요! 다음 동네로 이동할 수 있어요.');
 }
 function result() {
-  clearInput(); mode = 'result'; ui(false); $('message').classList.add('hidden'); const record = game.score > best;
-  if (record) { best = game.score; write('jabongi-adventure-best', best); $('best').textContent = best.toLocaleString(); }
+  clearInput(); mode = 'result'; music(); ui(false); $('message').classList.add('hidden'); const record = game.score > (game.challenge ? challengeBest : best);
+  if (record && game.challenge) { challengeBest = game.score; write('jabongi-challenge-best', challengeBest); } else if (record) { best = game.score; write('jabongi-adventure-best', best); }
+  const newlyUnlocked = game.phase === 'clear' && !unlocked; if (game.phase === 'clear') { unlocked = true; write('jabongi-adventure-cleared', true); } showBest();
   overlay.className = 'overlay modal-overlay';
-  overlay.innerHTML = `<div class="modal"><span class="eyebrow">${record?'NEW BEST ADVENTURE ✦':game.phase==='clear'?'OUR NEIGHBORHOOD, TOGETHER':'EVERY LITTLE STEP COUNTS'}</span><h2>${game.phase==='clear'?'세 동네, 모험 성공!':'한 번 더, 폴짝!'}</h2><p>${game.phase==='clear'?'자봉이의 작은 실천이 세 동네를 바꿨어요.':'지금까지 모은 온기도 동네에 남아 있어요.'}</p><div class="result-score">${game.score.toLocaleString()}<small>점</small></div><div class="stats"><div><small>모은 온기</small><b>${game.collected}개</b></div><div><small>먼지 정화</small><b>${game.stomps+game.purified}번</b></div><div><small>도착한 동네</small><b>${game.phase==='clear'?3:game.world} / 3</b></div></div><p class="best-power">최고 진화 · ${POWER_FORMS[game.maxPower].name} · 정화 하트 성공 ${game.purified}번</p><div class="earned-badges">${game.worldResults.map(r=>`<span>✓ ${r.badge}<small>${"★".repeat(r.stars)}${"☆".repeat(3-r.stars)}</small></span>`).join('')}</div><button class="primary" id="retry">다시 모험하기 ↻</button><div class="secondary-row"><button class="secondary" id="download">↓ 결과 이미지 저장</button><button class="secondary" id="share">↗ 게임 링크 공유</button></div><div id="share-fallback"></div><a class="text-link" href="https://www.1365.go.kr" target="_blank" rel="noopener noreferrer">우리 동네에서 자원봉사 찾아보기 ↗</a><p id="result-status" role="status"></p></div>`;
-  $('retry').onclick = start; $('download').onclick = download; $('share').onclick = share; $('retry').focus({preventScroll:true}); announce(`모험 종료. ${game.score}점, 온기 ${game.collected}개.`);
+  overlay.innerHTML = `<div class="modal"><span class="eyebrow">${game.challenge?'CHALLENGE · ':''}${record?'NEW BEST ADVENTURE ✦':game.phase==='clear'?'OUR NEIGHBORHOOD, TOGETHER':'EVERY LITTLE STEP COUNTS'}</span><h2>${game.phase==='clear'?'세 동네, 모험 성공!':'한 번 더, 폴짝!'}</h2><p>${game.phase==='clear'?'자봉이의 작은 실천이 세 동네를 바꿨어요.':'지금까지 모은 온기도 동네에 남아 있어요.'}</p><div class="result-score">${game.score.toLocaleString()}<small>점</small></div><div class="stats"><div><small>모은 온기</small><b>${game.collected}개</b></div><div><small>먼지 정화</small><b>${game.stomps+game.purified}번</b></div><div><small>최고 콤보</small><b>x${game.maxCombo}</b></div><div><small>보스 정화</small><b>${game.bossesCleared} / 3</b></div></div>${newlyUnlocked ? '<p class="unlock-note">✦ 도전 모드가 열렸어요! 처음 화면에서 도전해 보세요.</p>' : ''}<p class="best-power">최고 진화 · ${POWER_FORMS[game.maxPower].name} · 정화 하트 성공 ${game.purified}번</p><div class="earned-badges">${game.worldResults.map(r=>`<span>✓ ${r.badge}<small>${"★".repeat(r.stars)}${"☆".repeat(3-r.stars)}</small></span>`).join('')}</div><button class="primary" id="retry">다시 모험하기 ↻</button><div class="secondary-row"><button class="secondary" id="download">↓ 결과 이미지 저장</button><button class="secondary" id="share">↗ 게임 링크 공유</button></div><div id="share-fallback"></div><a class="text-link" href="https://www.1365.go.kr" target="_blank" rel="noopener noreferrer">우리 동네에서 자원봉사 찾아보기 ↗</a><p id="result-status" role="status"></p></div>`;
+  $('retry').onclick = () => start(); $('download').onclick = download; $('share').onclick = share; $('retry').focus({preventScroll:true}); announce(`모험 종료. ${game.score}점, 온기 ${game.collected}개.`);
 }
 function updateHUD() {
-  $('score').textContent = String(game.score).padStart(4,'0'); $('hearts').textContent = '♥'.repeat(game.hearts) + '♡'.repeat(3-game.hearts); $('hearts').setAttribute('aria-label',`남은 하트 ${game.hearts}개`);
+  $('score').textContent = String(game.score).padStart(4,'0'); $('hearts').textContent = '♥'.repeat(game.hearts) + '♡'.repeat(game.maxHearts-game.hearts); $('hearts').setAttribute('aria-label',`남은 하트 ${game.hearts}개`);
   $('world-number').textContent = `WORLD 0${game.world+1}`; $('world-name').textContent = WORLDS[game.world].name;
   const progress = Math.min(100,Math.max(0,Math.floor(game.player.x / game.level.spec.goal*100)));
   $('progress-fill').style.width = `${progress}%`; app.querySelector('[role="progressbar"]').setAttribute('aria-valuenow',progress);
@@ -72,9 +74,12 @@ function updateHUD() {
   const quest=missionStatus(game);$('quest-title').textContent=quest.title;$('quest-detail').textContent=quest.detail;$('quest-icon').textContent=quest.complete?'✓':['♧','▣','♡'][game.world];$('stars').textContent='★'.repeat(quest.stars)+'☆'.repeat(3-quest.stars);$('stars').setAttribute('aria-label',`숨은 별 ${quest.stars}개`);
   const npc=nearbyNeighbor(game);$('interact').classList.toggle('hidden',!npc||mode!=='playing');if(npc)$('interact').textContent=`E · ${npc.name}`;
   const form=POWER_FORMS[game.power];$('power-icon').textContent=form.icon;$('power-name').textContent=form.name;$('power-tip').textContent=form.tip;$('power-bar').dataset.level=game.power;$('attack').classList.toggle('hidden',game.power!==2);$('attack').classList.toggle('cooling',game.shotCooldown>0||game.shots.length>=3);canvas.dataset.powerLevel=game.power;canvas.dataset.projectileCount=game.shots.length;
-  canvas.dataset.facing=game.player.facing;canvas.dataset.spriteFrame=spriteFrame(game.player,ambient);canvas.dataset.world=game.world;canvas.dataset.missionComplete=String(quest.complete);
+  canvas.dataset.facing=game.player.facing;canvas.dataset.spriteFrame=spriteFrame(game.player,ambient);canvas.dataset.world=game.world;canvas.dataset.missionComplete=String(quest.complete);canvas.dataset.bossHp=game.level.boss.hp;canvas.dataset.bossState=game.level.boss.state;canvas.dataset.combo=game.combo;
   canvas.dataset.playerX = Math.round(game.player.x); canvas.dataset.playerY = Math.round(game.player.y); canvas.dataset.grounded = String(game.player.grounded);
 }
+function shake(amount) { if (!reduceMotion) fx.shake = Math.max(fx.shake, amount); }
+// Visual-only sparkles; game rules never read them.
+function burst(x, y, count, color) { if (x == null) return; for (let i = 0; i < count; i++) { const a = Math.random() * Math.PI * 2, v = 90 + Math.random() * 170; fx.sparks.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 120, r: 2 + Math.random() * 3, life: .7, max: .7, color}); } if (fx.sparks.length > 160) fx.sparks.splice(0, fx.sparks.length - 160); }
 function fire(){if(mode==='playing'&&shootHeart(game))tone('collect');}
 function jumpDown() { if (mode === 'playing') pressJump(game); }
 function directionInput() { const values = [...touches.values()]; return {left:keys.has('ArrowLeft')||keys.has('KeyA')||values.includes('left')||(tapDirection<0&&game.time<tapUntil),right:keys.has('ArrowRight')||keys.has('KeyD')||values.includes('right')||(tapDirection>0&&game.time<tapUntil)}; }
@@ -121,14 +126,20 @@ function frame(now) {
     if(keys.has('KeyX')||keys.has('KeyF')||[...touches.values()].includes('attack'))fire();
     updateAdventure(game,dt,directionInput());
     for(const e of game.events) {
-      if(e.type==='jump')tone('jump'); else if(['collect','gift','stomp','purify'].includes(e.type)){tone('collect');game.particles.push({...e,life:1});if(e.type==='gift')message(e.text,1.5);} else if(e.type==='hurt'){tone('hurt');message(e.text);} else if(e.type==='checkpoint'){tone('collect');message(e.text,3);} else if(['missionItem','spring','objective','shield','powerup','powerdown'].includes(e.type)){if(e.type!=='objective')tone('collect');message(e.text,3);}
+      if(e.type==='jump')tone('jump'); else if(['collect','gift','stomp','purify'].includes(e.type)){tone(e.type==='stomp'||e.type==='purify'?'stomp':'collect');game.particles.push({...e,life:1});burst(e.x,e.y,e.type==='collect'?5:10,e.type==='purify'?'#f2a9bd':'#ffe39c');if(e.type==='gift')message(e.text,1.5);}
+      else if(e.type==='hurt'){tone('hurt');shake(.6);message(e.text);} else if(e.type==='checkpoint'){tone('collect');message(e.text,3);}
+      else if(e.type==='bossWake'){tone('boss');shake(.4);message(e.text,4);} else if(e.type==='bossHit'){tone('bossHit');shake(.35);burst(e.x,e.y,14,'#c7bddb');game.particles.push({...e,life:1.2});}
+      else if(e.type==='bossDown'){tone('bossDown');shake(.8);burst(e.x,e.y,36,'#ffd8e3');burst(e.x,e.y,24,'#fff1b8');game.particles.push({...e,life:1.6});} else if(e.type==='gate'){message(e.text,3);}
+      else if(['wind','lamp'].includes(e.type)){tone(e.type);if(e.type==='lamp')burst(e.x,e.y,12,'#fff0b0');message(e.text,2.5);}
+      else if(['missionItem','spring','objective','shield','powerup','powerdown'].includes(e.type)){if(e.type!=='objective')tone(e.type==='powerup'?'power':'collect');message(e.text,3);}
     }
     game.particles.forEach(p=>p.life-=dt); game.particles=game.particles.filter(p=>p.life>0);
+    fx.shake=Math.max(0,fx.shake-dt*1.8);for(const p of fx.sparks){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=520*dt;}fx.sparks=fx.sparks.filter(p=>p.life>0);
     const view=adventureViewWidth(width,height),target=Math.max(0,Math.min(game.level.spec.length-view,game.player.x-view*.32)); camera+=(target-camera)*Math.min(1,dt*7);
     if(game.time>messageUntil)$('message').classList.add('hidden'); updateHUD();
     if(game.phase==='worldClear')worldClear();else if(['clear','over'].includes(game.phase))result();
   }
-  renderAdventure(ctx,width,height,game,sprite,camera,ambient,mode==='home'); requestAnimationFrame(frame);
+  renderAdventure(ctx,width,height,game,sprite,camera,ambient,mode==='home',fx); requestAnimationFrame(frame);
 }
 async function download() {
   try {
