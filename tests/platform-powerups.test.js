@@ -25,5 +25,5 @@ test('블록은 정화 하트를 막고 일시정지는 하트도 멈춤',()=>{
  const g=createAdventure();collectPower(g,'bloom');g.player.x=480;g.level.solids.push({x:550,y:370,w:15,h:60,type:'brick'});shootHeart(g);updateHearts(g,.05);assert.equal(g.shots.length,0);assert.equal(g.level.enemies[0].alive,true);g.level.solids.pop();g.shotCooldown=0;shootHeart(g);g.phase='paused';const x=g.shots[0].x;tick(g);assert.equal(g.shots[0].x,x);
 });
 test('다음 동네에서도 강화 상태 유지, 날아가는 하트는 초기화',()=>{
- const g=createAdventure();collectPower(g,'bloom');shootHeart(g);g.level.mission.npcs.forEach(n=>n.done=true);Object.assign(g.player,{x:g.level.spec.goal,y:370,vy:0,grounded:true});tick(g);assert.equal(advanceWorld(g),true);assert.equal(g.power,2);assert.equal(g.shots.length,0);
+ const g=createAdventure();collectPower(g,'bloom');shootHeart(g);g.level.mission.npcs.forEach(n=>n.done=true);g.level.boss.hp=0;Object.assign(g.player,{x:g.level.spec.goal,y:370,vy:0,grounded:true});tick(g);assert.equal(advanceWorld(g),true);assert.equal(g.power,2);assert.equal(g.shots.length,0);
 });

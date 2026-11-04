@@ -114,3 +114,64 @@ footer a { text-decoration: none; }
 .game-message {top:247px;}.action-controls {display:flex;gap:10px;}.attack {width:94px;background:#efd3dfe8;color:#a87990;border-color:#fae4e9;box-shadow:0 4px 0 #b78f9d;font-size:12px;font-weight:800;}.attack.cooling {opacity:.65;}.best-power {color:#a18494!important;font-size:11px!important;}
 @media(max-width:600px){.power-bar{top:190px;left:14px;max-width:calc(100% - 28px);padding:7px 11px;gap:7px}.power-bar>span{font-size:17px}.power-bar strong{font-size:10px}.power-bar small{font-size:8px}.game-message{top:235px}.action-controls{gap:8px}.attack{width:76px;font-size:11px}.jump{width:96px}}
 @media(max-width:360px){.direction{gap:6px}.direction .control{width:47px}.attack{width:62px;font-size:10px}.jump{width:82px}.power-bar{gap:6px}.power-bar small{font-size:7px}.power-bar strong{font-size:9px}}
+/* Challenge mode, neighborhood gimmicks and boss summary. */
+.challenge-button { display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:265px;margin-top:12px;padding:12px 18px;border-radius:13px;border:1px solid #c8b6d6;background:#f4eef8e8;color:#6d5a85;font-size:13px;font-weight:800;box-shadow:0 4px 0 #b9a6c955; }
+.challenge-button small { font-size:9px;font-weight:500;color:#8f80a3; }
+.challenge-lock { margin-top:12px !important;font-size:10px !important;color:#9aa38d !important; }
+.challenge-tag { display:inline-block;margin-right:8px;padding:3px 6px;border-radius:6px;background:#8a7fa0;color:#fff7ff !important;font-size:8px;letter-spacing:1px; }
+.world-extra { color:#a58fb5 !important;font-weight:600; }
+.unlock-note { margin:-8px 0 14px;color:#8a72a3 !important;font-weight:700; }
+.stats { flex-wrap:wrap;gap:22px; }
+@media(max-width:600px) { .challenge-button { width:100%;align-items:center; } .stats { gap:14px 18px; } .challenge-tag { display:block;margin:0 0 4px;width:max-content; } }
+.modal-overlay { overflow-y:auto;align-items:safe center; }
+/* Touch-first controls: one sliding movement pad, larger action buttons, no long-press menus. */
+.game-shell { -webkit-user-select:none;user-select:none;-webkit-touch-callout:none; }
+.game-shell input { -webkit-user-select:text;user-select:text; }
+.direction { padding:5px;border-radius:20px;background:#fff6df4d;border:1px solid #fff6df80;touch-action:none; }
+.direction .control { pointer-events:none; }
+.rank-open { display:block;margin-top:10px;padding:10px 4px;background:none;color:#6f8a64;font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:4px; }
+.interact-button { animation:nudge 1.2s ease-in-out infinite; }
+@keyframes nudge { 0%,100% { scale:1; } 50% { scale:1.06; } }
+@media (pointer:coarse), (max-width:600px) {
+  .direction .control { width:74px;height:70px;font-size:28px; }
+  .jump { width:124px;height:76px;font-size:14px; }
+  .attack { width:92px;height:76px;font-size:13px; }
+  .interact-button { bottom:112px;min-height:58px;padding:16px 24px;font-size:14px; }
+}
+@media (max-width:360px) { .direction .control { width:60px; } .jump { width:96px; } .attack { width:70px; } }
+/* Phones held sideways: use the whole screen height and tuck the page chrome away. */
+@media (orientation:landscape) and (max-height:520px) {
+  .site { padding:0 8px; } .header, .worlds, footer { display:none; }
+  .game-shell { height:calc(100svh - 12px);min-height:0;max-height:none;margin-top:6px;border-radius:16px; }
+  .hud { top:8px;left:10px;right:10px; } .hud-pill { min-width:74px;padding:7px 10px; } .hud-pill b { font-size:16px; }
+  .progress { top:62px; } .quest-panel { top:76px;max-width:300px;padding:7px 10px; } .power-bar { top:122px; } .game-message { top:150px; }
+  .controls { bottom:10px; } .direction .control { width:68px;height:60px; } .jump { height:64px; } .attack { height:64px; } .interact-button { bottom:84px; }
+  .overlay { padding:16px 28px; } h1 { font-size:36px;margin:10px 0; } h1 em { font-size:40px; } .hero-sticker { width:120px;bottom:40px; }
+}
+/* Results: grade badge, ranking form and leaderboard. */
+.result-line { display:flex;align-items:center;justify-content:center;gap:16px; }
+.grade { display:grid;place-items:center;width:62px;height:62px;border-radius:18px;font-size:34px;font-weight:900;color:#fff;box-shadow:0 5px 0 #0002;animation:pop .5s ease-out; }
+.grade-S { background:linear-gradient(135deg,#f3c35b,#e48aa3); } .grade-A { background:#7fae86; } .grade-B { background:#94a7c6; } .grade-C { background:#b1a79b; }
+@keyframes pop { 0% { scale:.3;rotate:-20deg; } 70% { scale:1.15; } 100% { scale:1;rotate:0deg; } }
+.time-line, .first-try { color:#8a72a3 !important;font-weight:700; }
+.rank-form { margin:0 0 16px;padding:14px;border:1px solid #d6cbe2;border-radius:14px;background:#f7f2fbcc;text-align:left; }
+.rank-form > strong { display:block;font-size:13px;color:#6d5a85;margin-bottom:10px; }
+.rank-fields { display:flex;gap:8px; } .rank-fields label { flex:1;font-size:10px;color:#8f80a3;display:flex;flex-direction:column;gap:4px; }
+.rank-fields input { width:100%;min-height:44px;padding:10px;border:1px solid #d6cbe2;border-radius:10px;background:#fff;font:inherit;font-size:16px;color:#4d425e; }
+.rank-notice { font-size:10px !important;line-height:1.6 !important;color:#9a8fa8 !important;margin:8px 0 !important; }
+.rank-submit { width:100%;min-height:46px;border-radius:11px;background:#8a7fa0;color:#fff;font-weight:800;font-size:13px;box-shadow:0 4px 0 #665c7c; }
+.rank-submit:disabled { opacity:.7; }
+#rank-status { margin:8px 0 0;font-size:12px;color:#6d5a85; } #rank-status .text-link { padding:6px;min-height:0; }
+.rank-modal h2 { margin-top:10px; }
+.rank-tabs { display:flex;justify-content:center;gap:6px;margin:10px 0;flex-wrap:wrap; }
+.rank-tab { min-height:40px;padding:8px 14px;border-radius:20px;border:1px solid #d0dcc3;background:#fffbe8;font-size:12px;color:#6f8a64; }
+.rank-tab.active { background:#658e6b;border-color:#658e6b;color:#fff;font-weight:800; }
+.rank-list { list-style:none;margin:12px 0;padding:0;max-height:min(46vh,380px);overflow-y:auto;text-align:left; }
+.rank-row { display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid #e3e6d4; }
+.rank-row.me { background:#f1ecf7;border-radius:10px; }
+.rank-no { width:30px;text-align:center;font-weight:900;color:#8a9a7d;font-size:15px; }
+.rank-name { flex:1;font-size:13px;color:#4f6a55;font-weight:700;overflow:hidden;text-overflow:ellipsis; } .rank-name small { display:block;font-size:10px;color:#9aa38d;font-weight:500; }
+.rank-row b { color:#6e9067;font-size:15px; } .rank-empty { padding:24px 8px;text-align:center;font-size:12px;color:#97a08a; }
+.stats { display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px; }
+@media (pointer:coarse) { .control-note { display:none; } }
+@media (orientation:landscape) and (max-height:520px) { .control-note { display:none; } .progress { top:60px; } .quest-panel { top:72px; } }

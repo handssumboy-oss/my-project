@@ -30,3 +30,16 @@ test('저장소 차단·320px·소리 전환과 기존 게임 링크',async({pag
  await page.getByRole('button',{name:'사운드 켜기'}).click();await expect(page.getByRole('button',{name:'사운드 끄기'})).toHaveAttribute('aria-pressed','true');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await expect(page.getByRole('link',{name:/레트로 러너/})).toHaveAttribute('href','./retro.html');await expect(page.getByRole('link',{name:/차근차근 미션/})).toHaveAttribute('href','./classic.html');
 });
+test('이동 패드를 누른 채 밀면 방향이 바뀌고, 가로 화면에서도 조작 버튼이 보임',async({page},info)=>{
+ if(info.project.name!=='mobile'){test.skip();return;}
+ await page.clock.install();await page.goto('/');await page.getByRole('button',{name:/모험 시작하기/}).click();
+ const left=await page.getByRole('button',{name:'왼쪽으로 이동'}).boundingBox(),right=await page.getByRole('button',{name:'오른쪽으로 이동'}).boundingBox();
+ expect(right.width).toBeGreaterThanOrEqual(60);expect(right.height).toBeGreaterThanOrEqual(60);
+ const client=await page.context().newCDPSession(page),at=r=>({x:r.x+r.width/2,y:r.y+r.height/2,id:1});
+ await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[at(right)]});await page.clock.runFor(300);await expect(page.locator('#game')).toHaveAttribute('data-facing','1');
+ await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[at(left)]});await page.clock.runFor(300);await expect(page.locator('#game')).toHaveAttribute('data-facing','-1');
+ await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await page.setViewportSize({width:844,height:390});await page.clock.runFor(100);
+ const shell=await page.locator('.game-shell').boundingBox(),jump=await page.getByRole('button',{name:'점프',exact:true}).boundingBox();
+ expect(shell.y+shell.height).toBeLessThanOrEqual(391);expect(jump.y+jump.height).toBeLessThanOrEqual(shell.y+shell.height);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
