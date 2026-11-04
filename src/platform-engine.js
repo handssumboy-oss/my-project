@@ -1,6 +1,6 @@
 import { collectPower, updateHearts } from './platform-powerups.js';
 import { createMission, addMissionItems, missionStatus, missionHint } from './platform-missions.js';
-import { CHALLENGE, buildEnemies, addFeatures, bossCleared, solidActive, addCombo, moveEnemy, updateGimmicks, updateBoss } from './platform-features.js';
+import { CHALLENGE, difficulty, buildEnemies, addFeatures, bossCleared, solidActive, addCombo, moveEnemy, updateGimmicks, updateBoss } from './platform-features.js';
 export const PLAYER = {w:40,h:60,speed:245,jump:700,gravity:1850};
 // Finishing a neighborhood faster than its par time earns 4 points per second saved.
 export const PAR_TIMES = [80,95,100];
@@ -9,7 +9,7 @@ export const WORLDS = [
  {name:'나눔 골목',tag:'작은 나눔이 이어지는 길',sky:['#edc7ba','#ffedbb'],grass:'#baa995',soil:'#b38e85',accent:'#9baac8',length:3000,goal:2840,gaps:[[860,1000],[1790,1930],[2400,2530]],checkpoint:1580},
  {name:'별빛 이웃 마을',tag:'마지막 온기를 전하러 가요',sky:['#666fa0','#d5a6b6'],grass:'#83a9ab',soil:'#8a8eaa',accent:'#f5cd8c',length:3100,goal:2940,gaps:[[910,1050],[1850,1990],[2470,2610]],checkpoint:1630},
 ];
-export function makeLevel(index,challenge=false){
+export function makeLevel(index,challenge=false,lap=1){
  const spec=WORLDS[index],solids=[];let start=0;
  for(const [left,right] of spec.gaps){solids.push({x:start,y:430,w:left-start,h:180,type:'ground'});start=right;}
  solids.push({x:start,y:430,w:spec.length-start,h:180,type:'ground'});
@@ -18,21 +18,24 @@ export function makeLevel(index,challenge=false){
  const items=[];let id=0;
  for(const solid of solids.filter(s=>s.type==='ground'))for(let x=solid.x+120;x<solid.x+solid.w-35;x+=115)items.push({id:id++,x,y:385,r:12,type:id%4===0?'leaf':'heart',taken:false});
  structures.forEach(([x,y,w])=>{for(let a=20;a<w;a+=42)items.push({id:id++,x:x+a,y:y-33,r:12,type:'heart',taken:false});});
- const enemies=buildEnemies(index,challenge);
+ const enemies=buildEnemies(index,challenge,lap);
  addMissionItems(index,structures,items);
  const mission=createMission(index);
  const springs=[{x: index===0?2090:index===1?2365:2440,y:413,w:42,h:17,cooldown:0}];
  const moving=index===1?[{x:900,y:365,w:72,h:18,type:'moving',baseX:900,baseY:365}]:[];
  solids.push(...moving);
- const level={spec,solids,items,enemies,mission,springs,time:0};addFeatures(level,index,challenge);return level;
+ const level={spec,solids,items,enemies,mission,springs,time:0};addFeatures(level,index,challenge,lap);return level;
 }
-export function createAdventure(options={}){const challenge=!!options.challenge,maxHearts=challenge?CHALLENGE.hearts:3;return {phase:'playing',challenge,maxHearts,world:0,level:makeLevel(0,challenge),player:{x:80,y:370,vx:0,vy:0,w:PLAYER.w,h:PLAYER.h,facing:1,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false},hearts:maxHearts,score:0,collected:0,stomps:0,time:0,checkpoint:80,checkpointActive:false,invincible:0,events:[],particles:[],worldStartScore:0,worldResults:[],power:0,maxPower:0,powerFlash:0,shots:[],shotCooldown:0,purified:0,combo:0,comboTimer:0,maxCombo:0,bossesCleared:0,worldStartTime:0,timeBonus:0,firstTry:0};}
+export function createAdventure(options={}){const challenge=!!options.challenge,maxHearts=challenge?CHALLENGE.hearts:3;return {phase:'playing',challenge,maxHearts,lap:1,world:0,level:makeLevel(0,challenge),player:{x:80,y:370,vx:0,vy:0,w:PLAYER.w,h:PLAYER.h,facing:1,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false},hearts:maxHearts,score:0,collected:0,stomps:0,time:0,checkpoint:80,checkpointActive:false,invincible:0,events:[],particles:[],worldStartScore:0,worldResults:[],power:0,maxPower:0,powerFlash:0,shots:[],shotCooldown:0,purified:0,combo:0,comboTimer:0,maxCombo:0,bossesCleared:0,worldStartTime:0,timeBonus:0,firstTry:0};}
 export function pressJump(game){if(game.phase!=='playing')return false;game.player.jumpBuffer=.16;game.player.jumpHeld=true;return true;}
 export function releaseJump(game){game.player.jumpHeld=false;if(game.player.vy < -280)game.player.vy=-280;}
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function hit(game,fall=false){if(game.phase!=='playing'||(!fall&&game.invincible>0))return;if(!fall&&game.level.mission.shield>0){game.level.mission.shield=0;game.invincible=1;game.events.push({type:'shield',text:'보호막이 지켜줬어요!'});return;}if(!fall&&game.power>0){game.power--;game.invincible=1.65;game.powerFlash=.5;game.player.vy=-260;game.events.push({type:'powerdown',text:game.power===1?'꽃빛 능력이 보호해줬어요! 든든 자봉이로 돌아가요.':'성장 하트가 보호해줬어요! 하트는 줄지 않았어요.'});return;}
  if(fall){game.power=0;game.shots=[];}game.combo=0;game.comboTimer=0;game.hearts--;game.invincible=1.65;game.events.push({type:'hurt',text:fall?'마지막 깃발에서 다시 출발해요.':'앗! 잠깐 반짝이는 동안은 안전해요.'});if(game.hearts<=0){game.phase='over';return;}if(fall){const p=game.player;p.x=game.checkpoint;p.y=350;p.vx=0;p.vy=0;p.jumpBuffer=0;game.events[game.events.length-1].text='괜찮아요! 마지막 깃발에서 다시 출발.';}else{game.player.vy=-310;game.player.vx=-game.player.facing*160;}}
-export function advanceWorld(game){if(game.phase!=='worldClear'||game.world>=2)return false;game.world++;game.level=makeLevel(game.world,game.challenge);Object.assign(game.player,{x:80,y:370,vx:0,vy:0,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false});game.checkpoint=80;game.checkpointActive=false;game.invincible=1;game.hearts=Math.min(game.maxHearts,game.hearts+1);game.phase='playing';game.worldStartScore=game.score;game.worldStartTime=game.time;game.events=[];game.shots=[];game.shotCooldown=0;return true;}
+function enterWorld(game,world){game.world=world;game.level=makeLevel(world,game.challenge,game.lap);Object.assign(game.player,{x:80,y:370,vx:0,vy:0,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false});game.checkpoint=80;game.checkpointActive=false;game.invincible=1;game.hearts=Math.min(game.maxHearts,game.hearts+1);game.phase='playing';game.worldStartScore=game.score;game.worldStartTime=game.time;game.events=[];game.shots=[];game.shotCooldown=0;}
+export function advanceWorld(game){if(game.phase!=='worldClear'||game.world>=2)return false;enterWorld(game,game.world+1);return true;}
+// After all three neighborhoods, keep the score and loop back to the park one level harder.
+export function nextLap(game){if(game.phase!=='clear')return false;game.lap++;enterWorld(game,0);return true;}
 export function updateAdventure(game,dt,input={left:false,right:false}){
  if(game.phase!=='playing')return;
  // Fixed substeps make landing and head collisions reliable even after a slow frame.
@@ -74,6 +77,6 @@ function stepAdventure(game,dt,input){
  if(!game.checkpointActive&&p.x>=l.spec.checkpoint){game.checkpoint=l.spec.checkpoint;game.checkpointActive=true;game.events.push({type:'checkpoint',text:'중간 깃발 도착! 여기서 다시 시작할 수 있어요.'});}
  if(p.x>=l.spec.goal&&p.grounded){
   if(!missionStatus(game).complete||!bossCleared(l)){if(game.time-l.mission.goalHintAt>3){l.mission.goalHintAt=game.time;game.events.push({type:'objective',text:missionHint(game)});}}
-  else{const seconds=game.time-game.worldStartTime,timeBonus=Math.max(0,Math.round((PAR_TIMES[game.world]-seconds)*4));game.score+=100+timeBonus;game.timeBonus+=timeBonus;game.worldResults.push({world:game.world,stars:l.mission.stars,badge:missionStatus(game).badge,seconds,timeBonus});game.phase=game.world===2?'clear':'worldClear';game.events.push({type:'finish',text:`우리 동네에 온기를 더했어요! +100${timeBonus?` · 타임 보너스 +${timeBonus}`:''}`});}
+  else{const seconds=game.time-game.worldStartTime,tune=l.tune??difficulty(1),timeBonus=Math.max(0,Math.round((PAR_TIMES[game.world]*tune.parScale-seconds)*4*tune.reward)),clearPoints=100*tune.reward;game.score+=clearPoints+timeBonus;game.timeBonus+=timeBonus;game.worldResults.push({world:game.world,lap:game.lap,stars:l.mission.stars,badge:missionStatus(game).badge,seconds,timeBonus});game.phase=game.world===2?'clear':'worldClear';game.events.push({type:'finish',text:`우리 동네에 온기를 더했어요! +${clearPoints}${timeBonus?` · 타임 보너스 +${timeBonus}`:''}`});}
  }
 }

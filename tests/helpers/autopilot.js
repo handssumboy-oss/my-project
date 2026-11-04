@@ -10,6 +10,6 @@ export function autopilot(g){
  }
  const gap=spec.gaps.some(([a,c])=>edge>=a-20&&p.x<c&&edge<a+15);
  const enemy=g.level.enemies.some(e=>e.alive&&e.kind!=='flyer'&&e.x-edge<68&&e.x-edge>-15);
- const block=g.level.solids.some(s=>!['ground','moving','gate','crumble'].includes(s.type)&&solidActive(g.level,s)&&s.x-edge<85&&s.x-edge>0&&p.y+p.h-s.y>5&&p.y+p.h-s.y<140);
+ const block=g.level.solids.some(s=>!['ground','moving','gate','crumble'].includes(s.type)&&solidActive(g.level,s)&&s.x-edge<85&&s.x-edge>-1&&p.y+p.h-s.y>5&&p.y+p.h-s.y<140);
  return {dir:1,jump:p.grounded&&(gap||enemy||block)};
 }

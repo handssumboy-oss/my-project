@@ -12,19 +12,30 @@ const ENEMIES = [
  [{x:590},{x:1340},{x:2180},{x:1480,kind:'hopper'},{x:2000,kind:'flyer',y:255}],
  [{x:590},{x:1340},{x:2210},{x:1110,kind:'hopper'},{x:1610,kind:'flyer',y:170}],
 ];
-const CHALLENGE_ENEMIES = [[{x:1880,kind:'hopper'}],[{x:2240,kind:'hopper'}],[{x:2020,kind:'hopper'}]];
+// Extra dust that joins as the difficulty rises (challenge mode starts with the first one).
+const EXTRA_ENEMIES = [
+ [{x:1880,kind:'hopper'},{x:1230,kind:'flyer',y:200},{x:2150,kind:'hopper'}],
+ [{x:2240,kind:'hopper'},{x:1150,kind:'flyer',y:230},{x:1060,kind:'hopper'}],
+ [{x:2020,kind:'hopper'},{x:900,kind:'flyer',y:220},{x:2330,kind:'hopper'}],
+];
+// Lv.1 is the first loop through the three neighborhoods; every further loop gets harder and pays more.
+export function difficulty(lap=1,challenge=false) {
+ const d=Math.max(0,Math.min(20,lap-1));
+ return {lap:d+1,d,enemySpeed:(challenge?CHALLENGE.enemySpeed:1)*(1+.15*d),extra:Math.min(3,d+(challenge?1:0)),bossHpBonus:d,bossSpeed:(challenge?CHALLENGE.bossSpeed:1)*(1+.1*d),hopScale:Math.max(.5,1-.08*d),crumbleShake:Math.max(.16,.32-.04*d),lampTime:Math.max(5,10-1.25*d),parScale:Math.max(.6,1-.1*d),reward:d+1};
+}
 const LEDGES = [[[1430,1580]],[[1620,1755]],[[1700,1820]]];
 
-export function buildEnemies(world,challenge=false) {
- const list=[...ENEMIES[world],...(challenge?CHALLENGE_ENEMIES[world]:[])],speed=challenge?CHALLENGE.enemySpeed:1;
+export function buildEnemies(world,challenge=false,lap=1) {
+ const level=difficulty(lap,challenge),list=[...ENEMIES[world],...EXTRA_ENEMIES[world].slice(0,level.extra)],speed=level.enemySpeed;
  return list.map(({x,kind='dust',y},i)=>{
   const flyer=kind==='flyer',w=flyer?36:34,h=flyer?30:30,baseY=flyer?y:400;
   return {kind,x,y:baseY,baseY,w,h,origin:x,min:x-(flyer?70:48),max:x+(flyer?70:62),vx:(i%2?1:-1)*(35+world*8)*(flyer?1.3:1)*speed,vy:0,hop:1+i*.3,grounded:true,alive:true};
  });
 }
 
-export function addFeatures(level,world,challenge=false) {
- const {solids,items}=level;let id=2000;
+export function addFeatures(level,world,challenge=false,lap=1) {
+ const {solids,items}=level,tune=difficulty(lap,challenge);let id=2000;
+ level.tune=tune;
  for(const [a,b] of LEDGES[world])solids.push({x:a,y:386,w:b-a,h:44,type:'ledge'});
  // Items that would sit inside raised ground are lifted onto its surface.
  for(const item of items)for(const s of solids)if(s.type==='ledge'&&item.x>s.x-item.r&&item.x<s.x+s.w+item.r&&item.y>s.y-item.r)item.y=s.y-item.r-14;
@@ -42,8 +53,8 @@ export function addFeatures(level,world,challenge=false) {
   for(const [x,y] of [[1517,322],[1612,262],[1707,202],[1740,202]])items.push({id:id++,x,y,r:12,type:'heart',taken:false});
   items.push({id:id++,x:1772,y:170,r:12,type:'leaf',taken:false});
  }
- const spec=BOSSES[world],hp=challenge?CHALLENGE.bossHp:spec.hp,w=84,h=68;
- level.boss={name:spec.name,subj:spec.subj,obj:spec.obj,x:spec.gate-w-24,y:430-h,w,h,vx:0,vy:0,hp,maxHp:hp,hurt:0,hop:spec.hopEvery,hopEvery:spec.hopEvery,speed:spec.speed*(challenge?CHALLENGE.bossSpeed:1),grounded:true,state:'sleep',x0:spec.x0,gate:spec.gate};
+ const spec=BOSSES[world],hp=(challenge?CHALLENGE.bossHp:spec.hp)+tune.bossHpBonus,w=84,h=68,hopEvery=spec.hopEvery*tune.hopScale;
+ level.boss={name:spec.name,subj:spec.subj,obj:spec.obj,x:spec.gate-w-24,y:430-h,w,h,vx:0,vy:0,hp,maxHp:hp,hurt:0,hop:hopEvery,hopEvery,speed:spec.speed*tune.bossSpeed,grounded:true,state:'sleep',x0:spec.x0,gate:spec.gate};
  solids.push({x:spec.gate,y:-400,w:34,h:830,type:'gate'});
 }
 
@@ -67,19 +78,19 @@ export function updateGimmicks(game,dt) {
  for(const wind of l.winds)if(p.x+p.w>wind.x&&p.x<wind.x+wind.w&&p.y+p.h>wind.top&&p.y<640){p.vy=Math.max(-420,p.vy-3000*dt);if(!p.inWind)game.events.push({type:'wind',text:'민들레 바람을 타고 두둥실!'});p.inWind=wind;}else if(p.inWind===wind)p.inWind=null;
  for(const s of l.solids){
   if(s.type!=='crumble')continue;
-  if(s.state==='idle'&&p.support===s){s.state='shaking';s.timer=.32;}
+  if(s.state==='idle'&&p.support===s){s.state='shaking';s.timer=l.tune?.crumbleShake??.32;}
   else if(s.state==='shaking'){s.timer-=dt;if(s.timer<=0){s.state='falling';s.timer=3;s.vy=0;}}
   else if(s.state==='falling'){s.vy+=1400*dt;s.y+=s.vy*dt;s.timer-=dt;if(s.timer<=0){s.state='idle';s.y=s.baseY;s.vy=0;}}
  }
  for(const lamp of l.lamps){
   lamp.lit=Math.max(0,lamp.lit-dt);
-  if(p.x+p.w>lamp.x-16&&p.x<lamp.x+16&&p.y+p.h>300){if(lamp.lit<9)game.events.push({type:'lamp',x:lamp.x,y:300,text:lamp.used?'가로등을 다시 켰어요!':'가로등 점등! 별빛 발판이 나타나요 +20'});if(!lamp.used){lamp.used=true;game.score+=20;}lamp.lit=10;}
+  if(p.x+p.w>lamp.x-16&&p.x<lamp.x+16&&p.y+p.h>300){if(lamp.lit<(l.tune?.lampTime??10)-1)game.events.push({type:'lamp',x:lamp.x,y:300,text:lamp.used?'가로등을 다시 켰어요!':'가로등 점등! 별빛 발판이 나타나요 +20'});if(!lamp.used){lamp.used=true;game.score+=20;}lamp.lit=l.tune?.lampTime??10;}
  }
 }
 
 function damageBoss(game,source) {
  const b=game.level.boss;b.hp--;b.hurt=.9;b.vy=-300;b.grounded=false;
- const done=b.hp<=0,event=addCombo(game,done?300:50,b.x+b.w/2,b.y,done?`${b.name} 정화!`:source==='heart'?'정화 하트 명중!':'꾹 밟기!');
+ const done=b.hp<=0,reward=game.level.tune?.reward??1,event=addCombo(game,(done?300:50)*reward,b.x+b.w/2,b.y,done?`${b.name} 정화!`:source==='heart'?'정화 하트 명중!':'꾹 밟기!');
  game.events.push({type:done?'bossDown':'bossHit',...event});
  if(done){game.bossesCleared++;game.level.solids=game.level.solids.filter(s=>s.type!=='gate');game.events.push({type:'gate',text:'먼지 장벽이 걷혔어요! 깃발로 가요.'});}
 }

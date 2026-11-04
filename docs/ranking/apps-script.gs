@@ -3,7 +3,7 @@
 // 설정 방법: docs/ranking/RANKING_SETUP.md
 
 // ---- core: copy of src/ranking-core.js (tests keep them identical) ----
-const RANKING_LIMITS = {nickname:8, group:12, maxScore:12000, top:20, groupMembers:5};
+const RANKING_LIMITS = {nickname:8, group:12, maxScore:300000, top:20, groupMembers:5};
 const BANNED = ['시발','씨발','ㅅㅂ','병신','ㅂㅅ','개새','존나','좆','미친놈','미친년','fuck','shit','bitch','섹스','sex','자살','죽어'];
 
 function cleanText(value, max) {
@@ -22,7 +22,7 @@ function validateEntry(input) {
   if (BANNED.some(word => compact.includes(word))) return {ok:false, error:'모두가 보는 랭킹이라 다른 표현을 써 주세요.'};
  }
  if (!Number.isFinite(score) || score < 0 || score > RANKING_LIMITS.maxScore) return {ok:false, error:'점수를 확인할 수 없어요.'};
- return {ok:true, nickname, group, score, mode, cleared:!!input.cleared, maxCombo:Math.max(0, Math.min(99, Math.round(Number(input.maxCombo) || 0))), bosses:Math.max(0, Math.min(3, Math.round(Number(input.bosses) || 0))), seconds:Math.max(0, Math.min(7200, Math.round(Number(input.seconds) || 0)))};
+ return {ok:true, nickname, group, score, mode, lap:Math.max(1, Math.min(99, Math.round(Number(input.lap) || 1))), cleared:!!input.cleared, maxCombo:Math.max(0, Math.min(99, Math.round(Number(input.maxCombo) || 0))), bosses:Math.max(0, Math.min(3, Math.round(Number(input.bosses) || 0))), seconds:Math.max(0, Math.min(7200, Math.round(Number(input.seconds) || 0)))};
 }
 
 function weekStart(now) {
@@ -33,7 +33,7 @@ function weekStart(now) {
 
 const playerKey = row => `${row.nickname}\u0001${row.group || ''}`;
 
-// rows: [{nickname, group, score, mode, time(ms), hidden}] → ranked board.
+// rows: [{nickname, group, score, mode, lap, time(ms), hidden}] → ranked board.
 function buildBoard(rows, {mode = 'normal', period = 'all', view = 'player', now = Date.now()} = {}) {
  const since = period === 'week' ? weekStart(now) : 0, best = new Map();
  for (const row of rows) {
@@ -48,21 +48,23 @@ function buildBoard(rows, {mode = 'normal', period = 'all', view = 'player', now
   const ranked = [...groups].map(([group, scores]) => ({group, members:scores.length, score:scores.slice(0, RANKING_LIMITS.groupMembers).reduce((a, b) => a + b, 0)})).sort((a, b) => b.score - a.score || b.members - a.members);
   return {view, mode, period, total:ranked.length, rows:ranked.slice(0, RANKING_LIMITS.top).map((row, i) => ({rank:i + 1, ...row}))};
  }
- return {view, mode, period, total:players.length, rows:players.slice(0, RANKING_LIMITS.top).map((row, i) => ({rank:i + 1, nickname:row.nickname, group:row.group || '', score:row.score, key:playerKey(row)})), ranks:Object.fromEntries(players.map((row, i) => [playerKey(row), i + 1]))};
+ return {view, mode, period, total:players.length, rows:players.slice(0, RANKING_LIMITS.top).map((row, i) => ({rank:i + 1, nickname:row.nickname, group:row.group || '', score:row.score, lap:row.lap || 1, key:playerKey(row)})), ranks:Object.fromEntries(players.map((row, i) => [playerKey(row), i + 1]))};
 }
 // ---- end core ----
 
 // ---- Apps Script web app (glue) ----
 const SHEET_NAME = '랭킹';
-const HEADERS = ['시간', '닉네임', '소속', '점수', '모드', '완주', '최고콤보', '보스', '플레이초', '기기ID', '숨김'];
+const HEADERS = ['시간', '닉네임', '소속', '점수', '모드', '완주', '최고콤보', '보스', '플레이초', '기기ID', '숨김', '레벨'];
 function sheet_() {
  const book = SpreadsheetApp.getActiveSpreadsheet();
  let sheet = book.getSheetByName(SHEET_NAME);
  if (!sheet) { sheet = book.insertSheet(SHEET_NAME); sheet.appendRow(HEADERS); sheet.setFrozenRows(1); }
+ // Sheets created by an older version get the new column names added in place.
+ else if (sheet.getLastColumn() < HEADERS.length) sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
  return sheet;
 }
 function rows_() {
- return sheet_().getDataRange().getValues().slice(1).map(v => ({time:new Date(v[0]).getTime(), nickname:String(v[1]), group:String(v[2] || ''), score:Number(v[3]), mode:String(v[4]), hidden:v[10] === true || String(v[10]).toUpperCase() === 'TRUE'})).filter(row => row.nickname && Number.isFinite(row.score));
+ return sheet_().getDataRange().getValues().slice(1).map(v => ({time:new Date(v[0]).getTime(), nickname:String(v[1]), group:String(v[2] || ''), score:Number(v[3]), mode:String(v[4]), hidden:v[10] === true || String(v[10]).toUpperCase() === 'TRUE', lap:Number(v[11]) || 1})).filter(row => row.nickname && Number.isFinite(row.score));
 }
 function json_(data) { return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON); }
 function doGet(e) {
@@ -82,7 +84,7 @@ function doPost(e) {
  const lock = LockService.getScriptLock();
  lock.waitLock(10000);
  try {
-  sheet_().appendRow([new Date(), entry.nickname, entry.group, entry.score, entry.mode, entry.cleared, entry.maxCombo, entry.bosses, entry.seconds, clientId, false]);
+  sheet_().appendRow([new Date(), entry.nickname, entry.group, entry.score, entry.mode, entry.cleared, entry.maxCombo, entry.bosses, entry.seconds, clientId, false, entry.lap]);
   cache.put('rate:' + clientId, '1', 20);
   const board = buildBoard(rows_(), {mode:entry.mode, now:Date.now()});
   return json_({ok:true, rank:board.ranks[playerKey(entry)], total:board.total});

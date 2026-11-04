@@ -1,6 +1,6 @@
 // Shared ranking rules. The same functions are copied into docs/ranking/apps-script.gs
 // (tests/ranking-core.test.js checks both behave alike), so keep this file free of imports.
-export const RANKING_LIMITS = {nickname:8, group:12, maxScore:12000, top:20, groupMembers:5};
+export const RANKING_LIMITS = {nickname:8, group:12, maxScore:300000, top:20, groupMembers:5};
 const BANNED = ['시발','씨발','ㅅㅂ','병신','ㅂㅅ','개새','존나','좆','미친놈','미친년','fuck','shit','bitch','섹스','sex','자살','죽어'];
 
 export function cleanText(value, max) {
@@ -19,7 +19,7 @@ export function validateEntry(input) {
   if (BANNED.some(word => compact.includes(word))) return {ok:false, error:'모두가 보는 랭킹이라 다른 표현을 써 주세요.'};
  }
  if (!Number.isFinite(score) || score < 0 || score > RANKING_LIMITS.maxScore) return {ok:false, error:'점수를 확인할 수 없어요.'};
- return {ok:true, nickname, group, score, mode, cleared:!!input.cleared, maxCombo:Math.max(0, Math.min(99, Math.round(Number(input.maxCombo) || 0))), bosses:Math.max(0, Math.min(3, Math.round(Number(input.bosses) || 0))), seconds:Math.max(0, Math.min(7200, Math.round(Number(input.seconds) || 0)))};
+ return {ok:true, nickname, group, score, mode, lap:Math.max(1, Math.min(99, Math.round(Number(input.lap) || 1))), cleared:!!input.cleared, maxCombo:Math.max(0, Math.min(99, Math.round(Number(input.maxCombo) || 0))), bosses:Math.max(0, Math.min(3, Math.round(Number(input.bosses) || 0))), seconds:Math.max(0, Math.min(7200, Math.round(Number(input.seconds) || 0)))};
 }
 
 export function weekStart(now) {
@@ -30,7 +30,7 @@ export function weekStart(now) {
 
 export const playerKey = row => `${row.nickname}\u0001${row.group || ''}`;
 
-// rows: [{nickname, group, score, mode, time(ms), hidden}] → ranked board.
+// rows: [{nickname, group, score, mode, lap, time(ms), hidden}] → ranked board.
 export function buildBoard(rows, {mode = 'normal', period = 'all', view = 'player', now = Date.now()} = {}) {
  const since = period === 'week' ? weekStart(now) : 0, best = new Map();
  for (const row of rows) {
@@ -45,5 +45,5 @@ export function buildBoard(rows, {mode = 'normal', period = 'all', view = 'playe
   const ranked = [...groups].map(([group, scores]) => ({group, members:scores.length, score:scores.slice(0, RANKING_LIMITS.groupMembers).reduce((a, b) => a + b, 0)})).sort((a, b) => b.score - a.score || b.members - a.members);
   return {view, mode, period, total:ranked.length, rows:ranked.slice(0, RANKING_LIMITS.top).map((row, i) => ({rank:i + 1, ...row}))};
  }
- return {view, mode, period, total:players.length, rows:players.slice(0, RANKING_LIMITS.top).map((row, i) => ({rank:i + 1, nickname:row.nickname, group:row.group || '', score:row.score, key:playerKey(row)})), ranks:Object.fromEntries(players.map((row, i) => [playerKey(row), i + 1]))};
+ return {view, mode, period, total:players.length, rows:players.slice(0, RANKING_LIMITS.top).map((row, i) => ({rank:i + 1, nickname:row.nickname, group:row.group || '', score:row.score, lap:row.lap || 1, key:playerKey(row)})), ranks:Object.fromEntries(players.map((row, i) => [playerKey(row), i + 1]))};
 }

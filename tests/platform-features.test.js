@@ -63,3 +63,14 @@ test('도전 모드: 하트 2개, 빠른 먼지, 추가 적, 강한 보스, 충�
 test('먼지를 정화할수록 동네 먼지 안개가 걷힘',()=>{
  const g=createAdventure();assert.equal(dustLeft(g.level),1);g.level.enemies.forEach(e=>e.alive=false);assert.ok(dustLeft(g.level)>0);g.level.boss.hp=0;assert.equal(dustLeft(g.level),0);
 });
+test('세 동네를 깨면 점수를 이어 Lv.2로, 레벨마다 먼지·보스·장치가 어려워지고 보상은 커짐',async()=>{
+ const {nextLap,PAR_TIMES}=await import('../src/platform-engine.js');const {difficulty}=await import('../src/platform-features.js');
+ const one=difficulty(1),two=difficulty(2),five=difficulty(5);
+ assert.ok(two.enemySpeed>one.enemySpeed&&five.enemySpeed>two.enemySpeed);assert.ok(five.crumbleShake<two.crumbleShake&&two.crumbleShake<one.crumbleShake);assert.ok(five.lampTime<one.lampTime);assert.ok(five.parScale<one.parScale);assert.equal(five.extra,3);assert.equal(two.reward,2);
+ const g=createAdventure();assert.equal(nextLap(g),false);toWorld(g,2);g.level.mission.npcs.forEach(n=>n.done=true);g.level.boss.hp=0;place(g,g.level.spec.goal);tick(g);assert.equal(g.phase,'clear');
+ const score=g.score,enemies=createAdventure().level.enemies.length,bossHp=createAdventure().level.boss.maxHp;
+ assert.equal(nextLap(g),true);assert.deepEqual([g.lap,g.world,g.phase,g.score],[2,0,'playing',score]);
+ assert.equal(g.level.enemies.length,enemies+1);assert.equal(g.level.boss.maxHp,bossHp+1);assert.ok(Math.abs(g.level.enemies[0].vx)>Math.abs(createAdventure().level.enemies[0].vx));
+ // Lv.2 pays double for clearing a neighborhood.
+ clearItems(g);g.level.mission.npcs.forEach(n=>n.done=true);g.level.boss.hp=0;g.time=g.worldStartTime+PAR_TIMES[0];place(g,g.level.spec.goal);const before=g.score;tick(g);assert.equal(g.score-before,200+g.worldResults.at(-1).timeBonus);assert.equal(g.worldResults.at(-1).lap,2);
+});

@@ -1,5 +1,5 @@
 import { POWER_FORMS, shootHeart } from './platform-powerups.js';
-import { createAdventure, updateAdventure, pressJump, releaseJump, advanceWorld, WORLDS } from './platform-engine.js';
+import { createAdventure, updateAdventure, pressJump, releaseJump, advanceWorld, nextLap, WORLDS } from './platform-engine.js';
 import { renderAdventure, adventureViewWidth, spriteFrame } from './platform-renderer.js';
 import { missionStatus, missionHint, nearbyNeighbor, answerNeighbor, choiceOrder, BADGES } from './platform-missions.js';
 import { createRanking, gradeFor } from './platform-ranking.js';
@@ -65,14 +65,35 @@ function worldClear() {
 function result() {
   clearInput(); mode = 'result'; music(); ui(false); $('message').classList.add('hidden'); const record = game.score > (game.challenge ? challengeBest : best);
   if (record && game.challenge) { challengeBest = game.score; write('jabongi-challenge-best', challengeBest); } else if (record) { best = game.score; write('jabongi-adventure-best', best); }
-  const newlyUnlocked = game.phase === 'clear' && !unlocked; if (game.phase === 'clear') { unlocked = true; write('jabongi-adventure-cleared', true); } showBest();
+  const cleared = game.phase === 'clear', newlyUnlocked = cleared && !unlocked; if (cleared) { unlocked = true; write('jabongi-adventure-cleared', true); } showBest();
+  const grade = gradeFor(game.score), badges = game.worldResults.slice(-3);
   overlay.className = 'overlay modal-overlay';
-  overlay.innerHTML = `<div class="modal"><span class="eyebrow">${game.challenge?'CHALLENGE · ':''}${record?'NEW BEST ADVENTURE ✦':game.phase==='clear'?'OUR NEIGHBORHOOD, TOGETHER':'EVERY LITTLE STEP COUNTS'}</span><h2>${game.phase==='clear'?'세 동네, 모험 성공!':'한 번 더, 폴짝!'}</h2><p>${game.phase==='clear'?'자봉이의 작은 실천이 세 동네를 바꿨어요.':'지금까지 모은 온기도 동네에 남아 있어요.'}</p><div class="result-line"><span class="grade grade-${gradeFor(game.score)}" aria-label="등급 ${gradeFor(game.score)}">${gradeFor(game.score)}</span><div class="result-score">${game.score.toLocaleString()}<small>점</small></div></div><div class="stats"><div><small>모은 온기</small><b>${game.collected}개</b></div><div><small>타임 보너스</small><b>+${game.timeBonus}</b></div><div><small>첫 마음</small><b>${game.firstTry}번</b></div><div><small>먼지 정화</small><b>${game.stomps+game.purified}번</b></div><div><small>최고 콤보</small><b>x${game.maxCombo}</b></div><div><small>보스 정화</small><b>${game.bossesCleared} / 3</b></div></div>${newlyUnlocked ? '<p class="unlock-note">✦ 도전 모드가 열렸어요! 처음 화면에서 도전해 보세요.</p>' : ''}<p class="best-power">최고 진화 · ${POWER_FORMS[game.maxPower].name} · 정화 하트 성공 ${game.purified}번</p><div class="earned-badges">${game.worldResults.map(r=>`<span>✓ ${r.badge}<small>${"★".repeat(r.stars)}${"☆".repeat(3-r.stars)}</small></span>`).join('')}</div>${rankingForm()}<button class="primary" id="retry">다시 모험하기 ↻</button><div class="secondary-row"><button class="secondary" id="download">↓ 결과 이미지 저장</button><button class="secondary" id="share">↗ 게임 링크 공유</button></div><div id="share-fallback"></div><a class="text-link" href="https://www.1365.go.kr" target="_blank" rel="noopener noreferrer">우리 동네에서 자원봉사 찾아보기 ↗</a><p id="result-status" role="status"></p></div>`;
-  bindRankingForm(); $('retry').onclick = () => start(); $('download').onclick = download; $('share').onclick = share; $('retry').focus({preventScroll:true}); announce(`모험 종료. ${game.score}점, 온기 ${game.collected}개.`);
+  overlay.innerHTML = `<div class="modal"><span class="eyebrow">${game.challenge?'CHALLENGE · ':''}Lv.${game.lap} · ${record?'NEW BEST ADVENTURE ✦':cleared?'OUR NEIGHBORHOOD, TOGETHER':'EVERY LITTLE STEP COUNTS'}</span><h2>${cleared?`Lv.${game.lap} 세 동네, 모험 성공!`:'한 번 더, 폴짝!'}</h2><p>${cleared?`다음 레벨은 먼지가 더 빠르고 보스가 더 강해요. 점수는 그대로 이어져요!`:`Lv.${game.lap}까지 왔어요. 지금까지 모은 온기도 동네에 남아 있어요.`}</p>
+  <div class="result-line"><span class="grade grade-${grade}" aria-label="등급 ${grade}">${grade}</span><div class="result-score">${game.score.toLocaleString()}<small>점</small></div></div>
+  ${cleared?`<button class="primary next-lap" id="next-lap">🔥 Lv.${game.lap+1} 계속 도전하기 <span>→</span></button>`:''}
+  ${rankingForm()}<div class="rank-top" id="rank-top" aria-live="polite"></div>
+  <div class="stats"><div><small>도달 레벨</small><b>Lv.${game.lap}</b></div><div><small>모은 온기</small><b>${game.collected}개</b></div><div><small>타임 보너스</small><b>+${game.timeBonus}</b></div><div><small>첫 마음</small><b>${game.firstTry}번</b></div><div><small>최고 콤보</small><b>x${game.maxCombo}</b></div><div><small>보스 정화</small><b>${game.bossesCleared}마리</b></div></div>${newlyUnlocked ? '<p class="unlock-note">✦ 도전 모드가 열렸어요! 처음 화면에서 도전해 보세요.</p>' : ''}<p class="best-power">최고 진화 · ${POWER_FORMS[game.maxPower].name} · 정화 하트 성공 ${game.purified}번</p><div class="earned-badges">${badges.map(r=>`<span>✓ ${r.badge}<small>${"★".repeat(r.stars)}${"☆".repeat(3-r.stars)}</small></span>`).join('')}</div><button class="${cleared?'secondary retry-wide':'primary'}" id="retry">${cleared?'처음부터 다시 하기 ↻':'다시 모험하기 ↻'}</button><div class="secondary-row"><button class="secondary" id="download">↓ 결과 이미지 저장</button><button class="secondary" id="share">↗ 게임 링크 공유</button></div><div id="share-fallback"></div><a class="text-link" href="https://www.1365.go.kr" target="_blank" rel="noopener noreferrer">우리 동네에서 자원봉사 찾아보기 ↗</a><p id="result-status" role="status"></p></div>`;
+  bindRankingForm(); showTopThree(); $('retry').onclick = () => start(); $('download').onclick = download; $('share').onclick = share;
+  if (cleared) { $('next-lap').onclick = continueLap; $('next-lap').focus({preventScroll:true}); } else if (!coarse) $('rank-nickname').focus({preventScroll:true}); // Phones would pop the keyboard over the result.
+  announce(`모험 종료. Lv.${game.lap}, ${game.score}점, 온기 ${game.collected}개.`);
+}
+function continueLap() {
+  if (!nextLap(game)) return;
+  clearInput(); rankingSubmitted = false; camera = 0; mode = 'playing'; overlay.className = 'overlay hidden'; ui(true); updateHUD(); music();
+  message(`🔥 Lv.${game.lap} 시작! 먼지가 더 빨라지고 보스가 강해졌어요. 보상도 ${game.lap}배!`, 5); tone('power'); shake(.4); canvas.focus({preventScroll:true});
+}
+// A small live "this week's top 3" under the form gives every result a target to beat.
+function showTopThree() {
+  const target = $('rank-top'), token = rankToken, view = {mode:game.challenge ? 'challenge' : 'normal', period:'week', view:'player'};
+  ranking.board(view).then(board => {
+    if (token !== rankToken || mode !== 'result' || !target.isConnected) return;
+    const rows = (board.rows ?? []).slice(0, 3);
+    target.innerHTML = rows.length ? `<small>${board.online ? '이번 주 TOP 3' : '이 기기 TOP 3'} · 이 점수를 넘어 보세요!</small><ol>${rows.map(r => `<li><span>${['🥇','🥈','🥉'][r.rank - 1] ?? r.rank}</span><b>${escapeHTML(r.nickname)}</b>${r.lap > 1 ? `<em>Lv.${r.lap}</em>` : ''}<strong>${r.score.toLocaleString()}</strong></li>`).join('')}</ol>` : `<small>이번 주 첫 기록의 주인공이 되어 보세요! 🏆</small>`;
+  }, () => {});
 }
 function updateHUD() {
   $('score').textContent = String(game.score).padStart(4,'0'); $('hearts').textContent = '♥'.repeat(game.hearts) + '♡'.repeat(game.maxHearts-game.hearts); $('hearts').setAttribute('aria-label',`남은 하트 ${game.hearts}개`);
-  $('world-number').textContent = `WORLD 0${game.world+1}`; $('world-name').textContent = WORLDS[game.world].name;
+  $('world-number').textContent = `${game.lap>1?`Lv.${game.lap} · `:''}WORLD 0${game.world+1}`; $('world-name').textContent = WORLDS[game.world].name;
   const progress = Math.min(100,Math.max(0,Math.floor(game.player.x / game.level.spec.goal*100)));
   $('progress-fill').style.width = `${progress}%`; app.querySelector('[role="progressbar"]').setAttribute('aria-valuenow',progress);
   $('checkpoint-label').textContent = game.checkpointActive ? '중간 깃발 저장됨 ⚑' : '목적지 깃발로 →';
@@ -172,7 +193,7 @@ async function share() {
 }
 function rankingForm() {
   const p = ranking.profile();
-  return `<form class="rank-form" id="rank-form" novalidate><strong>🏆 랭킹에 기록 남기기</strong><div class="rank-fields"><label>닉네임<input id="rank-nickname" maxlength="8" autocomplete="off" enterkeyhint="next" value="${escapeHTML(p.nickname)}" placeholder="2~8자"></label><label>소속 <small>(선택)</small><input id="rank-group" maxlength="12" autocomplete="off" enterkeyhint="done" value="${escapeHTML(p.group)}" placeholder="예: 행복봉사단"></label></div><p class="rank-notice">실명·전화번호·학교 반 같은 개인정보는 쓰지 마세요. 닉네임과 소속은 랭킹에 공개돼요.</p><button class="rank-submit" type="submit" id="rank-submit">${game.challenge ? '도전 모드 ' : ''}기록 등록</button><p id="rank-status" role="status"></p></form>`;
+  return `<form class="rank-form" id="rank-form" novalidate><strong>🏆 랭킹에 내 기록 올리기 <span>Lv.${game.lap} · ${game.score.toLocaleString()}점</span></strong><div class="rank-fields"><label><span>닉네임</span><input id="rank-nickname" maxlength="8" autocomplete="off" enterkeyhint="next" value="${escapeHTML(p.nickname)}" placeholder="2~8자"></label><label><span>소속 <small>(선택)</small></span><input id="rank-group" maxlength="12" autocomplete="off" enterkeyhint="done" value="${escapeHTML(p.group)}" placeholder="예: 행복봉사단"></label></div><p class="rank-notice">실명·전화번호·학교 반 같은 개인정보는 쓰지 마세요. 닉네임과 소속은 랭킹에 공개돼요.</p><button class="rank-submit" type="submit" id="rank-submit">${game.challenge ? '도전 모드 ' : ''}기록 등록</button><p id="rank-status" role="status"></p></form>`;
 }
 function bindRankingForm() {
   const form = $('rank-form'), status = $('rank-status'), button = $('rank-submit');
@@ -181,10 +202,10 @@ function bindRankingForm() {
     e.preventDefault(); if (rankingSubmitted) return;
     button.disabled = true; status.textContent = '기록을 등록하는 중…';
     const seconds = game.worldResults.reduce((sum, r) => sum + r.seconds, 0) || game.time;
-    const r = await ranking.submit({nickname:$('rank-nickname').value, group:$('rank-group').value, score:game.score, mode:game.challenge ? 'challenge' : 'normal', cleared:game.phase === 'clear', maxCombo:game.maxCombo, bosses:game.bossesCleared, seconds});
+    const r = await ranking.submit({nickname:$('rank-nickname').value, group:$('rank-group').value, score:game.score, lap:game.lap, mode:game.challenge ? 'challenge' : 'normal', cleared:game.phase === 'clear', maxCombo:game.maxCombo, bosses:game.bossesCleared, seconds});
     if (!r.ok) { status.textContent = r.error; button.disabled = false; return; }
     rankingSubmitted = true; button.textContent = '등록 완료 ✓'; tone('bossDown'); haptic([20,30,20]);
-    status.innerHTML = `<b>${r.online ? '전체' : '이 기기'} ${r.rank}위</b> / ${r.total}명 ${r.offline ? '· 연결이 어려워 이 기기에만 저장했어요' : ''} <button type="button" class="text-link" id="rank-view">랭킹 보기 →</button>`;
+    showTopThree(); status.innerHTML = `<b>${r.online ? '전체' : '이 기기'} ${r.rank}위</b> / ${r.total}명 ${r.offline ? '· 연결이 어려워 이 기기에만 저장했어요' : ''} <button type="button" class="text-link" id="rank-view">랭킹 보기 →</button>`;
     $('rank-view').onclick = () => openRanking(game.challenge ? 'challenge' : 'normal');
   };
 }
@@ -199,7 +220,7 @@ function openRanking(focusMode) {
     const me = ranking.profile(), rows = board.rows ?? [];
     const list = rows.length ? rows.map(r => rankView.view === 'group'
       ? `<li class="rank-row"><span class="rank-no">${r.rank}</span><span class="rank-name">${escapeHTML(r.group)}<small>${r.members}명 참여</small></span><b>${r.score.toLocaleString()}</b></li>`
-      : `<li class="rank-row${r.nickname === me.nickname && r.group === me.group ? ' me' : ''}"><span class="rank-no">${r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank - 1] : r.rank}</span><span class="rank-name">${escapeHTML(r.nickname)}${r.group ? `<small>${escapeHTML(r.group)}</small>` : ''}</span><b>${r.score.toLocaleString()}</b></li>`).join('')
+      : `<li class="rank-row${r.nickname === me.nickname && r.group === me.group ? ' me' : ''}"><span class="rank-no">${r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank - 1] : r.rank}</span><span class="rank-name">${escapeHTML(r.nickname)}${r.lap > 1 ? ` <em class="rank-lap">Lv.${r.lap}</em>` : ''}${r.group ? `<small>${escapeHTML(r.group)}</small>` : ''}</span><b>${r.score.toLocaleString()}</b></li>`).join('')
       : `<li class="rank-empty">${rankView.view === 'group' ? '아직 소속 기록이 없어요. 소속을 적고 등록해 보세요!' : '아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!'}</li>`;
     overlay.innerHTML = `<div class="modal rank-modal"><span class="eyebrow">${board.online ? 'LIVE RANKING' : 'THIS DEVICE RANKING'}</span><h2>🏆 동네 영웅 랭킹</h2><div class="rank-tabs">${tab('mode','normal','일반')}${tab('mode','challenge','도전')}</div><div class="rank-tabs">${tab('view','player','개인')}${tab('view','group','소속')}${tab('period','week','이번 주')}${tab('period','all','전체')}</div><ol class="rank-list">${list}</ol><p class="rank-notice">${board.online ? `${board.total}${rankView.view === 'group' ? '개 소속' : '명'} 참여 · 소속 점수는 구성원 최고 기록 상위 5명의 합계예요.` : board.offline ? '랭킹 서버에 연결하지 못해 이 기기 기록만 보여요.' : '지금은 이 기기에서 플레이한 기록끼리 순위를 매겨요.'}</p><button class="primary" id="rank-close">돌아가기</button></div>`;
     overlay.querySelectorAll('.rank-tab').forEach(b => b.onclick = () => { rankView = {...rankView, [b.dataset.key]:b.dataset.value}; rankToken++; overlay.replaceChildren(...saved); overlay.className = savedClass; openRanking(); });
