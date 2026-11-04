@@ -38,3 +38,9 @@ test('세 동네는 실제 이동·점프 물리로 완주 가능',()=>{
  assert.equal(g.phase,'clear',`world ${g.world}, x ${g.player.x}, hearts ${g.hearts}, mission ${JSON.stringify(g.level.mission)}`);
  assert.ok(g.score>300);assert.equal(g.bossesCleared,3);
 });
+test('기준 시간보다 빨리 깨면 남은 초마다 4점 타임 보너스',async()=>{
+ const {PAR_TIMES}=await import('../src/platform-engine.js');
+ const g=createAdventure();g.level.mission.npcs.forEach(n=>n.done=true);g.level.boss.hp=0;g.time=30;Object.assign(g.player,{x:g.level.spec.goal,y:370,vy:0,grounded:true});const score=g.score;step(g,.01);
+ assert.equal(g.worldResults[0].timeBonus,Math.round((PAR_TIMES[0]-g.worldResults[0].seconds)*4));assert.ok(g.timeBonus>190);assert.equal(g.score,score+100+g.timeBonus);
+ advanceWorld(g);assert.equal(g.worldStartTime,g.time);g.time+=500;g.level.mission.npcs.forEach(n=>n.done=true);g.level.boss.hp=0;Object.assign(g.player,{x:g.level.spec.goal,y:370,vy:0,grounded:true});step(g,.01);assert.equal(g.worldResults[1].timeBonus,0);
+});

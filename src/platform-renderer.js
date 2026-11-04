@@ -51,7 +51,8 @@ function neighbor(c,npc,world,t) {
  const by=y-(world===1?158:90);round(c,x-17,by,34,25,8,npc.done?'#b1d9a1':'#fff4cf');c.fillStyle='#67816a';c.textAlign='center';c.font='bold 12px sans-serif';c.fillText(npc.done?'♥':'E',x,by+17);
 }
 
-export const adventureViewWidth = (width,height) => Math.max(width < 600 ? 520 : 640, width / height * 540);
+// Narrow portrait phones zoom in a little so Jabongi, dust and platforms stay large enough to read and tap around.
+export const adventureViewWidth = (width,height) => Math.max(width < 600 ? 450 : 640, width / height * 540);
 export function renderAdventure(c,width,height,game,sprite,camera,ambient,home=false,fx={}){
  const vw=adventureViewWidth(width,height),scale=width/vw,vh=height/scale;const spec=game.level.spec;const offset=width<600?vh*.65-430:vh-540;const cam=home?120:camera;
  c.save();c.scale(scale,scale);const sky=c.createLinearGradient(0,0,0,vh);sky.addColorStop(0,spec.sky[0]);sky.addColorStop(1,spec.sky[1]);c.fillStyle=sky;c.fillRect(0,0,vw,vh);

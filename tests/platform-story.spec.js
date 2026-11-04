@@ -13,7 +13,7 @@ test('실제 키 입력과 대화로 세 동네 목표를 수행하고 배지 �
    else{
     for(let i=0;i<6&&!(await page.locator('#interact').isVisible());i++){await page.clock.runFor(25);time+=25;}
     await expect(page.locator('#interact')).toBeVisible();const resume=dir;await hold(0);await page.keyboard.press('e');
-    await expect(page.locator('[data-answer]')).toHaveCount(2);
+    await expect(page.locator('[data-answer]')).toHaveCount(3);
     if(route.world===0){await page.locator('[data-answer="1"]').click();await expect(page.locator('#dialogue-feedback')).not.toBeEmpty();}
     await page.screenshot({path:`test-results/story-dialog-${route.world}-${info.project.name}.png`});
     await page.locator(`[data-answer="${action.answer}"]`).click();await expect(page.getByRole('button',{name:/계속 모험하기/})).toBeVisible();await page.getByRole('button',{name:/계속 모험하기/}).click();await hold(resume);

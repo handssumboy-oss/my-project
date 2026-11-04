@@ -2,6 +2,8 @@ import { collectPower, updateHearts } from './platform-powerups.js';
 import { createMission, addMissionItems, missionStatus, missionHint } from './platform-missions.js';
 import { CHALLENGE, buildEnemies, addFeatures, bossCleared, solidActive, addCombo, moveEnemy, updateGimmicks, updateBoss } from './platform-features.js';
 export const PLAYER = {w:40,h:60,speed:245,jump:700,gravity:1850};
+// Finishing a neighborhood faster than its par time earns 4 points per second saved.
+export const PAR_TIMES = [80,95,100];
 export const WORLDS = [
  {name:'초록 공원',tag:'잃어버린 초록빛을 찾아서',sky:['#b7e2dd','#f8e9b9'],grass:'#7fbc89',soil:'#cfa77d',accent:'#eab974',length:2800,goal:2640,gaps:[[770,890],[1640,1770]],checkpoint:1390},
  {name:'나눔 골목',tag:'작은 나눔이 이어지는 길',sky:['#edc7ba','#ffedbb'],grass:'#baa995',soil:'#b38e85',accent:'#9baac8',length:3000,goal:2840,gaps:[[860,1000],[1790,1930],[2400,2530]],checkpoint:1580},
@@ -24,13 +26,13 @@ export function makeLevel(index,challenge=false){
  solids.push(...moving);
  const level={spec,solids,items,enemies,mission,springs,time:0};addFeatures(level,index,challenge);return level;
 }
-export function createAdventure(options={}){const challenge=!!options.challenge,maxHearts=challenge?CHALLENGE.hearts:3;return {phase:'playing',challenge,maxHearts,world:0,level:makeLevel(0,challenge),player:{x:80,y:370,vx:0,vy:0,w:PLAYER.w,h:PLAYER.h,facing:1,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false},hearts:maxHearts,score:0,collected:0,stomps:0,time:0,checkpoint:80,checkpointActive:false,invincible:0,events:[],particles:[],worldStartScore:0,worldResults:[],power:0,maxPower:0,powerFlash:0,shots:[],shotCooldown:0,purified:0,combo:0,comboTimer:0,maxCombo:0,bossesCleared:0};}
-export function pressJump(game){if(game.phase!=='playing')return false;game.player.jumpBuffer=.14;game.player.jumpHeld=true;return true;}
+export function createAdventure(options={}){const challenge=!!options.challenge,maxHearts=challenge?CHALLENGE.hearts:3;return {phase:'playing',challenge,maxHearts,world:0,level:makeLevel(0,challenge),player:{x:80,y:370,vx:0,vy:0,w:PLAYER.w,h:PLAYER.h,facing:1,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false},hearts:maxHearts,score:0,collected:0,stomps:0,time:0,checkpoint:80,checkpointActive:false,invincible:0,events:[],particles:[],worldStartScore:0,worldResults:[],power:0,maxPower:0,powerFlash:0,shots:[],shotCooldown:0,purified:0,combo:0,comboTimer:0,maxCombo:0,bossesCleared:0,worldStartTime:0,timeBonus:0,firstTry:0};}
+export function pressJump(game){if(game.phase!=='playing')return false;game.player.jumpBuffer=.16;game.player.jumpHeld=true;return true;}
 export function releaseJump(game){game.player.jumpHeld=false;if(game.player.vy < -280)game.player.vy=-280;}
 const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function hit(game,fall=false){if(game.phase!=='playing'||(!fall&&game.invincible>0))return;if(!fall&&game.level.mission.shield>0){game.level.mission.shield=0;game.invincible=1;game.events.push({type:'shield',text:'보호막이 지켜줬어요!'});return;}if(!fall&&game.power>0){game.power--;game.invincible=1.65;game.powerFlash=.5;game.player.vy=-260;game.events.push({type:'powerdown',text:game.power===1?'꽃빛 능력이 보호해줬어요! 든든 자봉이로 돌아가요.':'성장 하트가 보호해줬어요! 하트는 줄지 않았어요.'});return;}
  if(fall){game.power=0;game.shots=[];}game.combo=0;game.comboTimer=0;game.hearts--;game.invincible=1.65;game.events.push({type:'hurt',text:fall?'마지막 깃발에서 다시 출발해요.':'앗! 잠깐 반짝이는 동안은 안전해요.'});if(game.hearts<=0){game.phase='over';return;}if(fall){const p=game.player;p.x=game.checkpoint;p.y=350;p.vx=0;p.vy=0;p.jumpBuffer=0;game.events[game.events.length-1].text='괜찮아요! 마지막 깃발에서 다시 출발.';}else{game.player.vy=-310;game.player.vx=-game.player.facing*160;}}
-export function advanceWorld(game){if(game.phase!=='worldClear'||game.world>=2)return false;game.world++;game.level=makeLevel(game.world,game.challenge);Object.assign(game.player,{x:80,y:370,vx:0,vy:0,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false});game.checkpoint=80;game.checkpointActive=false;game.invincible=1;game.hearts=Math.min(game.maxHearts,game.hearts+1);game.phase='playing';game.worldStartScore=game.score;game.events=[];game.shots=[];game.shotCooldown=0;return true;}
+export function advanceWorld(game){if(game.phase!=='worldClear'||game.world>=2)return false;game.world++;game.level=makeLevel(game.world,game.challenge);Object.assign(game.player,{x:80,y:370,vx:0,vy:0,grounded:true,coyote:.1,jumpBuffer:0,jumpHeld:false});game.checkpoint=80;game.checkpointActive=false;game.invincible=1;game.hearts=Math.min(game.maxHearts,game.hearts+1);game.phase='playing';game.worldStartScore=game.score;game.worldStartTime=game.time;game.events=[];game.shots=[];game.shotCooldown=0;return true;}
 export function updateAdventure(game,dt,input={left:false,right:false}){
  if(game.phase!=='playing')return;
  // Fixed substeps make landing and head collisions reliable even after a slow frame.
@@ -44,7 +46,7 @@ function stepAdventure(game,dt,input){
  updateGimmicks(game,dt);
  p.support=null;
  for(const spring of l.springs)spring.cooldown=Math.max(0,spring.cooldown-dt);
- l.mission.shield=Math.max(0,l.mission.shield-dt);game.invincible=Math.max(0,game.invincible-dt);p.jumpBuffer=Math.max(0,p.jumpBuffer-dt);p.coyote=p.grounded?.11:Math.max(0,p.coyote-dt);
+ l.mission.shield=Math.max(0,l.mission.shield-dt);game.invincible=Math.max(0,game.invincible-dt);p.jumpBuffer=Math.max(0,p.jumpBuffer-dt);p.coyote=p.grounded?.13:Math.max(0,p.coyote-dt);
  const dir=Number(!!input.right)-Number(!!input.left),target=dir*PLAYER.speed;p.vx+=(target-p.vx)*Math.min(1,dt*(dir?16:22));if(dir)p.facing=dir;
  if(p.jumpBuffer>0&&p.coyote>0){p.vy=-PLAYER.jump;p.grounded=false;p.coyote=0;p.jumpBuffer=0;game.events.push({type:'jump'});}
  p.vy=Math.min(950,p.vy+PLAYER.gravity*dt);
@@ -72,6 +74,6 @@ function stepAdventure(game,dt,input){
  if(!game.checkpointActive&&p.x>=l.spec.checkpoint){game.checkpoint=l.spec.checkpoint;game.checkpointActive=true;game.events.push({type:'checkpoint',text:'중간 깃발 도착! 여기서 다시 시작할 수 있어요.'});}
  if(p.x>=l.spec.goal&&p.grounded){
   if(!missionStatus(game).complete||!bossCleared(l)){if(game.time-l.mission.goalHintAt>3){l.mission.goalHintAt=game.time;game.events.push({type:'objective',text:missionHint(game)});}}
-  else{game.score+=100;game.worldResults.push({world:game.world,stars:l.mission.stars,badge:missionStatus(game).badge});game.phase=game.world===2?'clear':'worldClear';game.events.push({type:'finish',text:'우리 동네에 온기를 더했어요! +100'});}
+  else{const seconds=game.time-game.worldStartTime,timeBonus=Math.max(0,Math.round((PAR_TIMES[game.world]-seconds)*4));game.score+=100+timeBonus;game.timeBonus+=timeBonus;game.worldResults.push({world:game.world,stars:l.mission.stars,badge:missionStatus(game).badge,seconds,timeBonus});game.phase=game.world===2?'clear':'worldClear';game.events.push({type:'finish',text:`우리 동네에 온기를 더했어요! +100${timeBonus?` · 타임 보너스 +${timeBonus}`:''}`});}
  }
 }

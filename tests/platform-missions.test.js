@@ -29,3 +29,15 @@ test('스프링 슈퍼 점프와 움직이는 발판의 탑승 이동',()=>{
  const g=createAdventure(),spring=g.level.springs[0];visit(g,spring.x+20);tick(g);assert.ok(g.player.vy<-800);
  next(g);const platform=g.level.solids.find(s=>s.type==='moving');Object.assign(g.player,{x:platform.x+15,y:platform.y-60,vy:0,grounded:true,support:platform});const oldY=g.player.y;for(let i=0;i<25;i++)tick(g);assert.equal(g.player.support,platform);assert.notEqual(g.player.y,oldY);assert.ok(Math.abs(g.player.y+60-platform.y)<1);
 });
+test('대화 선택지는 세 개이고 화면 순서는 무작위, 정답 번호는 그대로',async()=>{
+ const {choiceOrder,createMission}=await import('../src/platform-missions.js');
+ for(const world of [0,1,2])for(const n of createMission(world).npcs)assert.equal(n.choices.length,3);
+ const seq=[.9,.1];let i=0;assert.deepEqual(choiceOrder(3,()=>seq[i++]),[1,0,2]);
+ const firsts=new Set();for(let k=0;k<60;k++){const order=choiceOrder(3);assert.deepEqual([...order].sort(),[0,1,2]);firsts.add(order.indexOf(0));}
+ assert.equal(firsts.size,3,'correct answer appears in every position');
+});
+test('한 번에 맞히면 첫 마음 보너스 +50, 틀린 뒤 맞히면 기본 점수만',()=>{
+ const g=createAdventure();next(g);next(g);const [a,b]=g.level.mission.npcs;
+ visit(g,a.x);let score=g.score;const r=answerNeighbor(g,a.id,0);assert.equal(r.bonus,50);assert.equal(g.score,score+200);assert.equal(g.firstTry,1);
+ visit(g,b.x);answerNeighbor(g,b.id,2);score=g.score;assert.equal(answerNeighbor(g,b.id,0).bonus,0);assert.equal(g.score,score+150);assert.equal(g.firstTry,1);
+});
