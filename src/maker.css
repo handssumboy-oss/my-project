@@ -6,3 +6,5 @@
 .lead,.panel-note,.event-line,.feedback-note{color:#718168}.activity strong,.choice,.project-card h3{color:#687f5d}.activity small,.planner-hint,.forecast,.record small,.project-card p,.requirements,.empty-note{color:#899579}.room-caption,.week-info,.bond-line,.collection-count{color:#899579}.stat-head>span{color:#819175}.activity small{font-size:9px}.choice{font-size:12px}.choice:disabled{color:#a7ae9c}.choice small{color:#8d9d7f}.skill small{color:#9da98d}.ending .lead{color:#7d8d70}
 @media(max-width:680px){.activity strong{font-size:11px}.activity small{font-size:8px}.choice{font-size:11px}.panel-note{font-size:11px}.schedule-slot strong{font-size:10px}.project-card p{font-size:10px}}
 @media(max-width:360px){.activity strong{font-size:10px}.schedule-slot strong{font-size:9px}}
+/* Same Safari aspect-ratio fix as the adventure hero: the sprite sheet must not size its 2:3 frame box. */
+.room-character img{position:absolute;left:0;top:0}
