@@ -1,3 +1,4 @@
+import { addCombo, shotHitsBoss, solidActive } from './platform-features.js';
 export const POWER_FORMS = [
  {name:'기본 자봉이',icon:'♡',tip:'성장 하트를 찾아보세요',color:'#8eac81'},
  {name:'든든 자봉이',icon:'♥',tip:'커진 몸집 · 충돌 한 번 보호',color:'#73a77e'},
@@ -19,9 +20,9 @@ export function updateHearts(game,dt) {
  for(const shot of game.shots){
   shot.age+=dt;shot.x+=shot.vx*dt;shot.y=shot.baseY+Math.sin(shot.age*8)*6;
   if(shot.age>1.3||shot.x<0||shot.x>game.level.spec.length){shot.dead=true;continue;}
-  if(game.level.solids.some(s=>touches(shot,s))){shot.dead=true;continue;}
+  if(game.level.solids.some(s=>solidActive(game.level,s)&&touches(shot,s))||shotHitsBoss(game,shot)){shot.dead=true;continue;}
   const enemy=game.level.enemies.find(e=>e.alive&&touches(shot,e));
-  if(enemy){enemy.alive=false;enemy.purified=true;shot.dead=true;game.purified++;game.score+=30;game.events.push({type:'purify',x:enemy.x+17,y:enemy.y,text:'먼지 정화 +30'});}
+  if(enemy){enemy.alive=false;enemy.purified=true;shot.dead=true;game.purified++;game.events.push({type:'purify',...addCombo(game,30,enemy.x+enemy.w/2,enemy.y,'먼지 정화')});}
  }
  game.shots=game.shots.filter(s=>!s.dead);
 }

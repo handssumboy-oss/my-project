@@ -1,19 +1,21 @@
-import {createAdventure,updateAdventure,pressJump,releaseJump,advanceWorld,WORLDS} from '../../src/platform-engine.js';
+import {createAdventure,updateAdventure,pressJump,releaseJump,advanceWorld} from '../../src/platform-engine.js';
 import {nearbyNeighbor,answerNeighbor} from '../../src/platform-missions.js';
+import {autopilot} from './autopilot.js';
 // Produce real key timings from the deterministic physics. No browser game state is injected.
+// FRAME matches the 16ms animation frames of Playwright's fake clock, so replays follow the same physics.
+const FRAME=.016;
 export function storyRoute(){
  const g=createAdventure(),route=[];
  for(let world=0;world<3;world++){
-  const actions=[],start=g.time;let frames=0;
-  while(g.phase==='playing'&&frames++<10000){
+  const actions=[],start=g.time;let frames=0,dir=1;
+  const at=()=>Math.round((g.time-start)*1000);
+  while(g.phase==='playing'&&frames++<8000){
    const npc=nearbyNeighbor(g);
-   if(npc){const r=answerNeighbor(g,npc.id,npc.answer);if(r.ok){releaseJump(g);actions.push({at:Math.round((g.time-start)*1000),type:'talk',id:npc.id,answer:npc.answer});}}
-   const p=g.player,edge=p.x+p.w,spec=WORLDS[world];
-   const gap=spec.gaps.some(([a,b])=>edge>=a-20&&p.x<b&&edge<a+15);
-   const enemy=g.level.enemies.some(e=>e.alive&&e.x-edge<68&&e.x-edge>-15);
-   const block=g.level.solids.some(s=>!['ground','moving'].includes(s.type)&&s.x-edge<85&&s.x-edge>0&&p.y+p.h-s.y>5&&p.y+p.h-s.y<140);
-   if(p.grounded&&(gap||enemy||block)){releaseJump(g);pressJump(g);actions.push({at:Math.round((g.time-start)*1000),type:'jump'});}
-   updateAdventure(g,1/120,{right:true});
+   if(npc){const r=answerNeighbor(g,npc.id,npc.answer);if(r.ok){releaseJump(g);actions.push({at:at(),type:'talk',id:npc.id,answer:npc.answer,dir});}}
+   const d=autopilot(g);
+   if(d.dir!==dir){dir=d.dir;actions.push({at:at(),type:'move',dir});}
+   if(d.jump){releaseJump(g);pressJump(g);actions.push({at:at(),type:'jump'});}
+   updateAdventure(g,FRAME,{left:dir<0,right:dir>0});
   }
   if(!['worldClear','clear'].includes(g.phase))throw Error(`Route failed: world ${world} phase ${g.phase} x ${g.player.x}`);
   route.push({world,actions,duration:Math.round((g.time-start)*1000)});
