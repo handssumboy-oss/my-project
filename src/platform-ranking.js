@@ -3,7 +3,9 @@ import { buildBoard, validateEntry } from './ranking-core.js';
 const LOCAL_KEY = 'jabongi-local-ranking', PROFILE_KEY = 'jabongi-ranking-profile', CLIENT_KEY = 'jabongi-client-id';
 const safe = (fn, fallback) => { try { return fn(); } catch { return fallback; } };
 
-export function createRanking({endpoint = globalThis.JABONGI_RANKING_ENDPOINT ?? RANKING_ENDPOINT, storage = safe(() => localStorage, null), fetchImpl = globalThis.fetch?.bind(globalThis), now = () => Date.now()} = {}) {
+// Automated browsers (tests) never touch the real sheet unless a test sets JABONGI_RANKING_ENDPOINT itself.
+const defaultEndpoint = () => globalThis.JABONGI_RANKING_ENDPOINT ?? (globalThis.navigator?.webdriver ? '' : RANKING_ENDPOINT);
+export function createRanking({endpoint = defaultEndpoint(), storage = safe(() => localStorage, null), fetchImpl = globalThis.fetch?.bind(globalThis), now = () => Date.now()} = {}) {
  const read = (key, fallback) => safe(() => JSON.parse(storage.getItem(key)) ?? fallback, fallback);
  const write = (key, value) => safe(() => storage.setItem(key, JSON.stringify(value)));
  const clientId = () => { let id = read(CLIENT_KEY, ''); if (!id) { id = safe(() => crypto.randomUUID(), String(now()) + Math.random().toString(16).slice(2)); write(CLIENT_KEY, id); } return id; };

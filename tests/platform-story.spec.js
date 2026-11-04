@@ -22,7 +22,8 @@ test('실제 키 입력과 대화로 세 동네 목표를 수행하고 배지 �
   await page.clock.runFor(Math.max(0,route.duration-time)+300);await hold(0);await page.keyboard.up('Space');
   if(route.world<2){await expect(page.getByRole('button',{name:/으로 출발/})).toBeVisible();await page.getByRole('button',{name:/으로 출발/}).click();}
  }
- await expect(page.getByRole('heading',{level:2})).toContainText('세 동네, 모험 성공');await expect(page.locator('.earned-badges>span')).toHaveCount(3);await expect(page.locator('.stats')).toContainText('3 / 3');await expect(page.getByText('도전 모드가 열렸어요')).toBeVisible();await page.screenshot({path:`test-results/story-complete-${info.project.name}.png`});expect(errors).toEqual([]);
+ await expect(page.getByRole('heading',{level:2})).toContainText('세 동네, 모험 성공');await expect(page.locator('.earned-badges>span')).toHaveCount(3);await expect(page.locator('.stats')).toContainText('3마리');await expect(page.locator('.rank-form')).toBeVisible();await expect(page.getByText('도전 모드가 열렸어요')).toBeVisible();
+ await page.getByRole('button',{name:/Lv\.2 계속 도전하기/}).click();await expect(page.locator('#world-number')).toHaveText('Lv.2 · WORLD 01');await expect(page.locator('#game')).toHaveAttribute('data-boss-hp','4');await page.screenshot({path:`test-results/story-complete-${info.project.name}.png`});expect(errors).toEqual([]);
 });
 test('오른쪽·왼쪽 시선, 걷기·점프 프레임과 스프라이트 알파',async({page})=>{
  await page.clock.install();const response=page.waitForResponse(r=>r.url().includes('jabongi-front-motion')&&r.status()===200);await page.goto('/');const sheetURL=(await response).url();

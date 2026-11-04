@@ -183,3 +183,17 @@ footer a { text-decoration: none; }
   /* On narrow phones the hint bubble sits under Jabongi's feet so it never covers the face or the hints. */
   .speech { right:auto;left:50%;bottom:58px;transform:translateX(-50%) rotate(-2deg);white-space:nowrap; }
 }
+/* Result screen: the ranking form sits right under the score and stands out; the next level is the main call to action. */
+.next-lap { width:100%;margin:6px 0 14px;background:linear-gradient(135deg,#e98a5e,#d9607e);border-color:#f0a284;box-shadow:0 5px 0 #a54a5c;animation:nudge 1.4s ease-in-out infinite; }
+.rank-form { border:2px solid #b9a4d4;background:linear-gradient(180deg,#f6effc,#fbf8ff);box-shadow:0 6px 18px #7a5fa024; }
+.rank-form > strong { display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:15px; } .rank-form > strong span { font-size:11px;color:#9a86b5;font-weight:600; }
+.rank-top { margin:-6px 0 16px;font-size:11px;color:#7f7294;text-align:left; } .rank-top small { display:block;margin-bottom:6px;font-size:10px;color:#9a8fa8; }
+.rank-top ol { list-style:none;margin:0;padding:0;display:grid;gap:4px; } .rank-top li { display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:9px;background:#fffdf4; }
+.rank-top li b { flex:1;color:#5d6f55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; } .rank-top li strong { color:#6e9067; } .rank-top em, .rank-lap { font-style:normal;font-size:9px;font-weight:800;color:#fff;background:#d9607e;border-radius:6px;padding:2px 5px; }
+.retry-wide { width:100%;flex:none;margin-top:4px; }
+/* Pulse with light instead of size: a button that keeps resizing is harder to tap. */
+.interact-button { animation:glow-green 1.2s ease-in-out infinite; }
+.next-lap { animation:glow-warm 1.4s ease-in-out infinite; }
+@keyframes glow-green { 0%,100% { box-shadow:0 4px 0 #7ea37b88,0 0 0 0 #9fd39c00; } 50% { box-shadow:0 4px 0 #7ea37b88,0 0 0 8px #9fd39c66; } }
+@keyframes glow-warm { 0%,100% { box-shadow:0 5px 0 #a54a5c,0 0 0 0 #f0a28400; } 50% { box-shadow:0 5px 0 #a54a5c,0 0 0 9px #f0a28466; } }
+.rank-fields label small { font-size:9px;color:#b0a6bd; }
