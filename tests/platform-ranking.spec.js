@@ -1,6 +1,9 @@
 import {test,expect} from '@playwright/test';
 async function gameOver(page){await page.getByRole('button',{name:/모험 시작하기/}).click();await page.keyboard.down('ArrowRight');await page.clock.runFor(13000);await page.keyboard.up('ArrowRight');await expect(page.getByRole('heading',{level:2})).toContainText('한 번 더');}
+// Browser tests must never write to the real ranking sheet.
+test.beforeEach(async({page})=>{await page.route('https://script.google.com/**',route=>route.abort());});
 test('서버 연결 전에는 기기 랭킹에 닉네임·소속으로 등록하고 순위를 봄',async({page})=>{
+ await page.addInitScript(()=>{window.JABONGI_RANKING_ENDPOINT='';});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install();await page.goto('/');await gameOver(page);
  await expect(page.locator('.grade')).toBeVisible();
  await page.getByLabel('닉네임').fill('010-1234-5678');await page.getByRole('button',{name:/기록 등록/}).click();await expect(page.locator('#rank-status')).toContainText('연락처');
