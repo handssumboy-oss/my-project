@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root{ --bg:#FFF8EE; --ink:#2B2B2B; --sub:#5A5A5A; --navy:#1F3A5F; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#ccc;font-family:'Noto Sans KR',sans-serif;color:var(--ink)}
+  .feed{width:1080px;height:1350px;background:var(--bg);position:relative;overflow:hidden;margin-bottom:40px}
+  .label{position:absolute;left:80px;top:88px;font-size:28px;font-weight:700;color:var(--navy)}
+  .feed h1{position:absolute;left:0;right:0;top:230px;text-align:center;font-weight:900;font-size:72px;line-height:1.3;letter-spacing:-2px;color:var(--navy)}
+  .feed .body{position:absolute;left:100px;right:100px;top:460px;text-align:center;font-size:36px;line-height:1.6;font-weight:500;letter-spacing:-0.6px}
+  .feed svg{position:absolute;left:50%;top:760px;transform:translateX(-50%)}
+  .feed .note{position:absolute;left:0;right:0;top:1090px;text-align:center;font-size:30px;color:var(--sub);font-weight:500}
+  .band{position:absolute;left:0;right:0;bottom:0;height:120px;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 80px}
+  .band .ivy{height:80px}.band .kvc{height:50px}
+  .banner{width:1600px;height:800px;background:var(--bg);position:relative;overflow:hidden}
+  .banner h1{position:absolute;left:110px;top:210px;font-weight:900;font-size:88px;line-height:1.3;letter-spacing:-2.5px;color:var(--navy)}
+  .banner .body{position:absolute;left:110px;top:470px;font-size:52px;line-height:1.5;font-weight:500;letter-spacing:-1px}
+  .banner svg{position:absolute;right:140px;top:150px}
+  .banner .logos{position:absolute;right:80px;bottom:56px;display:flex;gap:36px;align-items:center}
+  .banner .ivy{height:80px}.banner .kvc{height:50px}
+</style>
+</head>
+<body>
+<section class="feed" id="feed">
+  <div class="label">2026 세계 자원봉사자의 해</div>
+  <h1>작은 실천을 나눠 주셔서<br>감사합니다</h1>
+  <p class="body">「2026 모두의 봉사 레시피 AWARDS」<br>접수를 마쳤습니다.<br>직접 해 본 작은 실천을 레시피로 나눠 주신<br>모든 분께 감사드립니다.</p>
+  <svg width="420" height="280" viewBox="0 0 420 280" fill="none" stroke="#1F3A5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="rotate(-8 150 140)"><rect x="70" y="50" width="180" height="200" rx="10" fill="#FFF8EE"/></g>
+    <g transform="rotate(4 180 140)"><rect x="100" y="40" width="180" height="200" rx="10" fill="#FFF8EE"/></g>
+    <rect x="130" y="30" width="180" height="200" rx="10" fill="#fff"/>
+    <line x1="155" y1="75" x2="285" y2="75"/><line x1="155" y1="110" x2="285" y2="110"/><line x1="155" y1="145" x2="255" y2="145"/><line x1="155" y1="180" x2="270" y2="180"/>
+    <ellipse cx="350" cy="80" rx="22" ry="32" transform="rotate(20 350 80)"/>
+    <line x1="340" y1="110" x2="305" y2="250"/>
+  </svg>
+  <p class="note">심사 결과는 추후 누리집을 통해 안내해 드리겠습니다.</p>
+  <div class="band"><img class="ivy" src="logo_ivy_t.png" alt=""><img class="kvc" src="logo_kvc_t.png" alt=""></div>
+</section>
+<section class="banner" id="banner">
+  <h1>작은 실천을 나눠 주셔서<br>감사합니다</h1>
+  <p class="body">「2026 모두의 봉사 레시피 AWARDS」<br>접수를 마쳤습니다.</p>
+  <svg width="420" height="280" viewBox="0 0 420 280" fill="none" stroke="#1F3A5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="rotate(-8 150 140)"><rect x="70" y="50" width="180" height="200" rx="10" fill="#FFF8EE"/></g>
+    <g transform="rotate(4 180 140)"><rect x="100" y="40" width="180" height="200" rx="10" fill="#FFF8EE"/></g>
+    <rect x="130" y="30" width="180" height="200" rx="10" fill="#fff"/>
+    <line x1="155" y1="75" x2="285" y2="75"/><line x1="155" y1="110" x2="285" y2="110"/><line x1="155" y1="145" x2="255" y2="145"/><line x1="155" y1="180" x2="270" y2="180"/>
+    <ellipse cx="350" cy="80" rx="22" ry="32" transform="rotate(20 350 80)"/>
+    <line x1="340" y1="110" x2="305" y2="250"/>
+  </svg>
+  <div class="logos"><img class="ivy" src="logo_ivy_t.png" alt=""><img class="kvc" src="logo_kvc_t.png" alt=""></div>
+</section>
+</body>
+</html>
