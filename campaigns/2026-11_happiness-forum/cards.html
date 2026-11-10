@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root{ --bg:#FFF8EE; --ink:#2B2B2B; --sub:#5A5A5A; --navy:#1F3A5F; --pink:#D9487A; --pinksoft:#FBE3EC; --line:#E6D9CC; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#ccc;font-family:'Noto Sans KR',sans-serif;color:var(--ink)}
+  .card{width:1080px;height:1350px;background:var(--bg);position:relative;overflow:hidden;margin:0 0 40px}
+  .pad{position:absolute;inset:80px}
+  .logos{display:flex;justify-content:space-between;align-items:center}
+  .logos .ivy{height:95px}.logos .kvc{height:55px}
+  .page{position:absolute;right:72px;bottom:66px;font-size:26px;color:var(--sub);font-weight:500}
+  .label{font-size:30px;font-weight:700;color:var(--pink);letter-spacing:-0.5px}
+  h1{font-weight:900;font-size:84px;line-height:1.22;letter-spacing:-3px}
+  h2{font-weight:900;font-size:64px;line-height:1.28;letter-spacing:-2px}
+  .lead{font-size:38px;line-height:1.55;font-weight:500;letter-spacing:-0.8px}
+  .sub{font-size:30px;line-height:1.6;color:var(--sub);font-weight:500;letter-spacing:-0.5px}
+  .info{margin-top:70px;background:#fff;border:3px solid var(--pinksoft);border-radius:28px;padding:40px 46px;display:flex;flex-direction:column;gap:22px}
+  .info .row{display:flex;gap:28px;align-items:baseline}
+  .info .k{flex:0 0 96px;font-size:30px;font-weight:700;color:var(--pink)}
+  .info .v{font-size:38px;font-weight:700;letter-spacing:-1px;line-height:1.35}
+  .q{margin-top:60px;display:flex;flex-direction:column;gap:26px}
+  .q .item{background:#fff;border-left:10px solid var(--pink);border-radius:20px;padding:38px 42px}
+  .q .tag{font-size:26px;font-weight:700;color:var(--pink)}
+  .q .t{margin-top:10px;font-size:38px;font-weight:700;letter-spacing:-1px;line-height:1.4}
+  .q .who{margin-top:12px;font-size:27px;color:var(--sub);font-weight:500}
+  .heart{position:absolute;opacity:.9}
+  .orgs{margin-top:46px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .orgs div{background:#fff;border:3px solid var(--line);border-radius:22px;padding:30px 28px;font-size:30px;font-weight:700;letter-spacing:-0.8px;text-align:center}
+  .panel{margin-top:56px;background:var(--pinksoft);border-radius:28px;padding:40px 46px}
+  .panel .t{font-size:40px;font-weight:900;letter-spacing:-1px;color:var(--navy)}
+  .panel .sub{margin-top:14px}
+</style>
+</head>
+<body>
+
+<!-- 1. 표지 -->
+<section class="card" id="c1">
+  <div class="pad">
+    <div class="logos"><img class="ivy" src="logo_ivy_t.png" alt=""><img class="kvc" src="logo_kvc_t.png" alt=""></div>
+    <div style="margin-top:110px">
+      <div class="label">자원봉사와 행복</div>
+      <h1 style="margin-top:26px">서로 돕는 시민이<br>행복한 지역을<br>만든다</h1>
+      <div class="info">
+        <div class="row"><div class="k">일시</div><div class="v">2026. 11. 18.(수) 10:00</div></div>
+        <div class="row"><div class="k">장소</div><div class="v">국회의원회관<br>제7간담회의실</div></div>
+      </div>
+    </div>
+  </div>
+  <svg class="heart" style="right:70px;top:300px" width="120" height="110" viewBox="0 0 24 22"><path d="M12 21s-9-5.6-9-12A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 6.4-9 12-9 12z" fill="none" stroke="#D9487A" stroke-width="1.4"/></svg>
+  <div class="page">1 / 5</div>
+</section>
+
+<!-- 2. 질문 -->
+<section class="card" id="c2">
+  <div class="pad">
+    <div class="label">이런 이야기를 나눕니다</div>
+    <h2 style="margin-top:26px">자원봉사는<br>우리를 행복하게 할까요?</h2>
+    <p class="lead" style="margin-top:44px">자원봉사와 행복의 관계를<br>연구와 정책, 지역의 경험으로<br>함께 살펴봅니다.</p>
+    <div class="q">
+      <div class="item"><div class="tag">주제 발표 1</div><div class="t">자원봉사와 행복<br>- 국제 연구와 해외 정책의 시사점</div></div>
+      <div class="item"><div class="tag">주제 발표 2</div><div class="t">행복한 사회를 만드는<br>자원봉사의 가치와 공동체 변화</div></div>
+    </div>
+  </div>
+  <div class="page">2 / 5</div>
+</section>
+
+<!-- 3. 성과사례 -->
+<section class="card" id="c3">
+  <div class="pad">
+    <div class="label">지역에서 만든 변화</div>
+    <h2 style="margin-top:26px">자원봉사로 달라진<br>우리 동네 이야기</h2>
+    <div class="q" style="margin-top:70px">
+      <div class="item"><div class="tag">정책 성과사례</div><div class="t">자원봉사로 온(溫) 시민이<br>행복한 강릉</div><div class="who">강원특별자치도 강릉시</div></div>
+      <div class="item"><div class="tag">지역 성과사례</div><div class="t">자원봉사로 만든<br>지역사회의 변화</div><div class="who">한국중앙자원봉사센터</div></div>
+    </div>
+  </div>
+  <div class="page">3 / 5</div>
+</section>
+
+<!-- 4. 종합 토론 -->
+<section class="card" id="c4">
+  <div class="pad">
+    <div class="label">종합 토론</div>
+    <h2 style="margin-top:26px">자원봉사로<br>행복한 사회를 만들기<br>위한 과제</h2>
+    <div class="panel">
+      <div class="t">연구와 현장이 함께</div>
+      <p class="sub">지역 자원봉사센터, 행복 연구자,<br>자원봉사 연구자가 토론에 참여하고<br>질의응답으로 마무리합니다.</p>
+    </div>
+    <p class="sub" style="margin-top:56px">함께 여는 기관</p>
+    <div class="orgs" style="margin-top:20px">
+      <div>국회국민총행복정책포럼</div>
+      <div>행복실현지방정부협의회</div>
+      <div>한국중앙자원봉사센터</div>
+      <div>국민총행복전환포럼</div>
+    </div>
+  </div>
+  <div class="page">4 / 5</div>
+</section>
+
+<!-- 5. 마무리 -->
+<section class="card" id="c5">
+  <div class="pad">
+    <div class="label">2026 세계 자원봉사자의 해</div>
+    <h2 style="margin-top:26px">서로 돕는 마음이<br>지역의 행복이 되기까지</h2>
+    <p class="lead" style="margin-top:44px">자원봉사와 행복을 잇는 이야기,<br>11월 18일 국회에서 나눕니다.</p>
+    <div class="info" style="margin-top:60px">
+      <div class="row"><div class="k">일시</div><div class="v">2026. 11. 18.(수)<br>10:00 ~ 12:00</div></div>
+      <div class="row"><div class="k">장소</div><div class="v">국회의원회관<br>제7간담회의실</div></div>
+    </div>
+    <div class="logos" style="position:absolute;left:0;right:0;bottom:40px"><img class="ivy" src="logo_ivy_t.png" alt=""><img class="kvc" src="logo_kvc_t.png" alt=""></div>
+  </div>
+  <div class="page">5 / 5</div>
+</section>
+
+</body>
+</html>
